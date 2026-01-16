@@ -3,17 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kimia Catcher: Level Edition</title>
+    <title>Kimia Catcher: DUEL EDITION</title>
     <style>
         body { margin: 0; overflow: hidden; background: #1e272e; font-family: 'Segoe UI', sans-serif; touch-action: none; }
+        #gameCanvas { display: block; width: 100%; height: 100vh; }
         
-        #gameCanvas { display: block; width: 100%; height: 100vh; cursor: none; }
+        .ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
         
-        .ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; flex-direction: column; }
-        
-        /* HEADER: Skor di Kiri, Musik di Kanan */
-        .header { padding: 20px; display: flex; justify-content: space-between; align-items: flex-start; color: white; font-weight: bold; font-size: 1.5em; text-shadow: 0 0 10px rgba(255,255,255,0.5); z-index: 10; }
-        
+        /* Skor & Nyawa di atas masing-masing layar */
+        .stats { position: absolute; top: 20px; width: 40%; display: flex; justify-content: space-between; color: white; font-weight: bold; font-size: 1.2em; text-shadow: 0 0 10px rgba(0,0,0,0.5); }
+        #statsP1 { left: 5%; color: #74b9ff; }
+        #statsP2 { right: 5%; color: #ff7675; }
+
         .modal { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
             background: rgba(0,0,0,0.9); 
@@ -22,81 +23,66 @@
         }
         .hidden { display: none !important; }
         
-        /* TOMBOL LEVEL */
-        .level-container { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 20px; }
+        .level-container { display: flex; gap: 10px; margin-top: 20px; }
         .lvl-btn {
             padding: 15px 25px; font-size: 1.2em; border: none; border-radius: 10px;
-            color: white; cursor: pointer; font-weight: bold; transition: 0.2s;
-            box-shadow: 0 5px 0 rgba(0,0,0,0.3); width: 80px;
+            color: white; cursor: pointer; font-weight: bold; transition: 0.2s; width: 80px;
         }
-        .lvl-btn:active { transform: translateY(5px); box-shadow: none; }
-        
-        /* Warna Level 1-5 (Hijau ke Merah) */
-        .l1 { background: #00b894; } /* Sangat Lambat */
-        .l2 { background: #0984e3; }
-        .l3 { background: #fdcb6e; color: #333; }
-        .l4 { background: #e17055; }
-        .l5 { background: #d63031; } /* Sangat Cepat */
-
-        .restart-btn { 
-            padding: 15px 40px; font-size: 1.5em; border: none; border-radius: 50px; 
-            background: #6c5ce7; color: white; cursor: pointer; font-weight: bold; margin-top: 20px; 
-        }
+        .l1 { background: #00b894; } .l2 { background: #0984e3; } .l3 { background: #fdcb6e; color: #333; } .l4 { background: #e17055; } .l5 { background: #d63031; }
 
         .mute-btn { 
-            pointer-events: auto; cursor: pointer; background: rgba(255,255,255,0.2); 
-            color: white; border-radius: 50%; width: 50px; height: 50px; 
-            border: none; font-size: 1.5em; display: flex; justify-content: center; align-items: center;
+            position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+            pointer-events: auto; cursor: pointer; background: rgba(255,255,255,0.1); 
+            color: white; border-radius: 50%; width: 45px; height: 45px; border: 1px solid white; font-size: 1.2em; z-index: 30;
         }
 
-        .drag-hint {
-            position: absolute; bottom: 10%; width: 100%; text-align: center;
-            color: rgba(255,255,255,0.5); font-size: 1.2em; animation: fadeBlink 2s infinite;
+        .divider { 
+            position: absolute; left: 50%; top: 0; width: 4px; height: 100%; 
+            background: rgba(255,255,255,0.2); transform: translateX(-50%); z-index: 5;
         }
-        @keyframes fadeBlink { 0%,100% {opacity: 0.3} 50% {opacity: 0.8} }
-
     </style>
 </head>
 <body>
 
     <canvas id="gameCanvas"></canvas>
+    <div class="divider"></div>
 
     <div class="ui-layer">
-        <div class="header">
-            <div style="text-align: left;">
-                <div style="margin-bottom: 5px;">❤️ <span id="livesDisplay">3</span></div>
-                <div>✨ <span id="scoreDisplay">0</span></div>
-            </div>
-            
-            <button class="mute-btn" onclick="toggleMute()">🔊</button>
+        <div id="statsP1" class="stats">
+            <div>P1 ✨ <span id="scoreP1">0</span></div>
+            <div>❤️ <span id="livesP1">3</span></div>
         </div>
-        
-        <div id="dragHint" class="drag-hint">👋 Geser Mouse / Jari untuk Menangkap</div>
+        <div id="statsP2" class="stats">
+            <div>❤️ <span id="livesP2">3</span></div>
+            <div>P2 ✨ <span id="scoreP2">0</span></div>
+        </div>
+        <button class="mute-btn" onclick="toggleMute()">🔊</button>
     </div>
 
     <div id="startScreen" class="modal">
-        <div style="font-size: 4em; margin-bottom: 10px;">🧪</div>
-        <h1 style="font-size: 3.5em; margin: 0; background: linear-gradient(to right, #00b894, #0984e3); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">KIMIA CATCHER</h1>
-        <p style="font-size: 1.2em; color: #dfe6e9; margin-bottom: 30px;">Pilih Tingkat Kecepatan:</p>
-        
+        <div style="font-size: 3em;">⚔️</div>
+        <h1 style="font-size: 3em; margin: 0; color: #f1c40f;">KIMIA DUEL</h1>
+        <p>Tangkap zat sesuai misi di sisi layar masing-masing!</p>
+        <p style="font-size: 0.8em; color: #bdc3c7;">P1 (Kiri): Tombol A & D | P2 (Kanan): Tombol ⬅️ & ➡️</p>
         <div class="level-container">
-            <button class="lvl-btn l1" onclick="startGame(1)">1<br><span style="font-size:0.6em">Santai</span></button>
-            <button class="lvl-btn l2" onclick="startGame(2)">2<br><span style="font-size:0.6em">Pelan</span></button>
-            <button class="lvl-btn l3" onclick="startGame(3)">3<br><span style="font-size:0.6em">Normal</span></button>
-            <button class="lvl-btn l4" onclick="startGame(4)">4<br><span style="font-size:0.6em">Cepat</span></button>
-            <button class="lvl-btn l5" onclick="startGame(5)">5<br><span style="font-size:0.6em">Kilat</span></button>
+            <button class="lvl-btn l1" onclick="startGame(1)">1</button>
+            <button class="lvl-btn l2" onclick="startGame(2)">2</button>
+            <button class="lvl-btn l3" onclick="startGame(3)">3</button>
+            <button class="lvl-btn l4" onclick="startGame(4)">4</button>
+            <button class="lvl-btn l5" onclick="startGame(5)">5</button>
         </div>
     </div>
 
     <div id="gameOverScreen" class="modal hidden">
-        <h1 style="color: #ff7675;">GAME OVER</h1>
-        <p>Skor Akhir:</p>
-        <h2 style="font-size: 5em; margin: 10px 0; color: #fab1a0;" id="finalScore">0</h2>
-        <button class="restart-btn" onclick="location.reload()">PILIH LEVEL LAGI 🔄</button>
+        <h1 id="winnerTitle" style="font-size: 3em;">PEMENANGNYA...</h1>
+        <div style="display: flex; gap: 50px; margin: 20px 0;">
+            <div>P1: <span id="finalScoreP1">0</span></div>
+            <div>P2: <span id="finalScoreP2">0</span></div>
+        </div>
+        <button onclick="location.reload()" style="padding: 15px 40px; font-size: 1.5em; border-radius: 50px; background: #6c5ce7; color: white; border: none; cursor: pointer;">MAIN LAGI 🔄</button>
     </div>
 
 <script>
-    // --- DATABASE ---
     const substances = [
         { name: "Emas", formula: "Au", type: "UNSUR", color: "#f1c40f" },
         { name: "Oksigen", formula: "O2", type: "UNSUR", color: "#00cec9" },
@@ -116,300 +102,163 @@
     ];
 
     const targets = ["UNSUR", "SENYAWA", "CAMPURAN"];
-
-    // --- VARIABLES ---
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     
-    let score = 0;
-    let lives = 3;
     let isPlaying = false;
-    let currentTarget = "UNSUR";
-    let targetTimer = 0;
-    
-    // Level & Speed
     let currentLevel = 1;
-    let speedMultiplier = 1; // Akan diatur berdasarkan level
-    
-    // Player
-    const player = { x: 0, y: 0, width: 140, height: 80 }; 
-    let items = [];
-    let particles = [];
-    let spawnTimer = 0;
 
-    // --- AUDIO ---
+    // --- PLAYER OBJECTS ---
+    const p1 = { x: 0, y: 0, w: 120, h: 70, score: 0, lives: 3, target: "UNSUR", items: [], color: "#74b9ff", label: "P1", timer: 0 };
+    const p2 = { x: 0, y: 0, w: 120, h: 70, score: 0, lives: 3, target: "SENYAWA", items: [], color: "#ff7675", label: "P2", timer: 0 };
+    let particles = [];
+
     const AudioEngine = {
         ctx: new (window.AudioContext || window.webkitAudioContext)(),
         muted: false,
-        playTone: function(freq, type, duration) {
-            if(this.muted || this.ctx.state === 'suspended') this.ctx.resume();
-            if(this.muted) return;
-            const osc = this.ctx.createOscillator();
-            const gain = this.ctx.createGain();
-            osc.type = type;
-            osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-            gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
-            osc.connect(gain); gain.connect(this.ctx.destination);
-            osc.start(); osc.stop(this.ctx.currentTime + duration);
-        },
-        playCorrect: function() { this.playTone(800, 'sine', 0.1); setTimeout(()=>this.playTone(1200, 'sine', 0.2), 100); },
-        playWrong: function() { this.playTone(150, 'sawtooth', 0.4); },
-        playSwitch: function() { this.playTone(400, 'square', 0.1); setTimeout(()=>this.playTone(600, 'square', 0.1), 150); }
+        playTone: function(f, t, d) { if(this.muted) return; const o = this.ctx.createOscillator(); const g = this.ctx.createGain(); o.type = t; o.frequency.value = f; g.gain.setValueAtTime(0.1, this.ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime+d); o.connect(g); g.connect(this.ctx.destination); o.start(); o.stop(this.ctx.currentTime+d); },
+        playCorrect: function() { this.playTone(800, 'sine', 0.2); },
+        playWrong: function() { this.playTone(150, 'sawtooth', 0.3); }
     };
 
-    // --- MOVEMENT ---
-    function updatePlayerPosition(clientX) {
-        if (!isPlaying) return;
-        const rect = canvas.getBoundingClientRect();
-        let newX = clientX - rect.left - (player.width / 2);
-        if (newX < 0) newX = 0;
-        if (newX > canvas.width - player.width) newX = canvas.width - player.width;
-        player.x = newX;
-    }
-    canvas.addEventListener('mousemove', (e) => updatePlayerPosition(e.clientX));
-    canvas.addEventListener('touchmove', (e) => { e.preventDefault(); updatePlayerPosition(e.touches[0].clientX); }, { passive: false });
-
     function resize() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        player.y = canvas.height - 130; 
-        if(player.x > canvas.width - player.width) player.x = canvas.width - player.width;
+        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+        p1.y = p2.y = canvas.height - 120;
+        p1.x = (canvas.width / 4) - (p1.w / 2);
+        p2.x = (canvas.width * 3/4) - (p2.w / 2);
     }
     window.addEventListener('resize', resize);
     resize();
-    player.x = canvas.width / 2 - player.width / 2;
 
-    // --- LOGIC ---
-    function spawnItem() {
-        const sub = substances[Math.floor(Math.random() * substances.length)];
-        const size = 70; 
-        const x = Math.random() * (canvas.width - size);
-        
-        // LOGIKA KECEPATAN BERDASARKAN LEVEL
-        // Level 1: 0.5 - 1.0 (Sangat Lambat)
-        // Level 5: 3.0 - 5.0 (Sangat Cepat)
-        let baseSpeed = 0.5;
-        if (currentLevel === 1) baseSpeed = 0.5 + Math.random() * 0.5;
-        else if (currentLevel === 2) baseSpeed = 1.0 + Math.random() * 0.8;
-        else if (currentLevel === 3) baseSpeed = 1.8 + Math.random() * 1.0;
-        else if (currentLevel === 4) baseSpeed = 2.5 + Math.random() * 1.5;
-        else if (currentLevel === 5) baseSpeed = 4.0 + Math.random() * 2.0;
+    // --- CONTROLS ---
+    const keys = {};
+    window.addEventListener('keydown', e => keys[e.code] = true);
+    window.addEventListener('keyup', e => keys[e.code] = false);
 
-        items.push({
-            x: x, y: -80, size: size, data: sub,
-            speed: baseSpeed, 
-            rot: Math.random() * Math.PI,
-            rotSpeed: (Math.random()-0.5) * 0.02
-        });
-    }
-
-    function createExplosion(x, y, color) {
-        for(let i=0; i<20; i++) {
-            particles.push({ 
-                x: x, y: y, 
-                vx: (Math.random()-0.5)*15, vy: (Math.random()-0.5)*15, 
-                life: 1.0, color: color, size: Math.random()*5 + 2 
-            });
+    canvas.addEventListener('touchmove', e => {
+        e.preventDefault();
+        for (let t of e.touches) {
+            if (t.clientX < canvas.width / 2) moveBasket(p1, t.clientX, 0, canvas.width/2 - p1.w);
+            else moveBasket(p2, t.clientX, canvas.width/2, canvas.width - p2.w);
         }
+    }, { passive: false });
+
+    function moveBasket(player, targetX, min, max) {
+        let newX = targetX - (player.w / 2);
+        if (newX < min) newX = min;
+        if (newX > max) newX = max;
+        player.x = newX;
     }
 
-    function switchTarget() {
-        const newTarget = targets[Math.floor(Math.random() * targets.length)];
-        if (newTarget === currentTarget) { switchTarget(); return; }
-        currentTarget = newTarget;
-        AudioEngine.playSwitch();
+    function spawnItem(player, sideMin, sideMax) {
+        const sub = substances[Math.floor(Math.random() * substances.length)];
+        const size = 65;
+        let baseSpeed = 0.5 + (currentLevel * 0.7) + (Math.random() * 0.5);
+        player.items.push({ x: sideMin + Math.random() * (sideMax - sideMin - size), y: -80, size, data: sub, speed: baseSpeed });
+    }
+
+    function switchTarget(player) {
+        const others = targets.filter(t => t !== player.target);
+        player.target = others[Math.floor(Math.random() * others.length)];
     }
 
     function update() {
         if (!isPlaying) return;
-        
-        targetTimer++;
-        if (targetTimer > 900) { switchTarget(); targetTimer = 0; } 
 
-        spawnTimer++;
-        // Frekuensi spawn juga dipengaruhi level
-        // Level 1 spawn lambat (120 frame), Level 5 spawn cepat (40 frame)
-        let spawnRate = 120 - (currentLevel * 15); 
-        if (spawnTimer > spawnRate) { 
-            spawnItem();
-            spawnTimer = 0; 
-        }
+        // Keyboard Controls
+        if (keys['KeyA'] && p1.x > 0) p1.x -= 8;
+        if (keys['KeyD'] && p1.x < canvas.width/2 - p1.w) p1.x += 8;
+        if (keys['ArrowLeft'] && p2.x > canvas.width/2) p2.x -= 8;
+        if (keys['ArrowRight'] && p2.x < canvas.width - p2.w) p2.x += 8;
 
-        // Items Logic
-        for (let i = items.length - 1; i >= 0; i--) {
-            let item = items[i];
-            item.y += item.speed;
-            item.rot += item.rotSpeed;
+        [p1, p2].forEach((p, idx) => {
+            if (p.lives <= 0) return;
+            
+            p.timer++;
+            if (p.timer > 800) { switchTarget(p); p.timer = 0; }
 
-            const hitX = item.x + 10;
-            const hitW = item.size - 20;
-
-            if (
-                hitX < player.x + player.width &&
-                hitX + hitW > player.x &&
-                item.y < player.y + player.height &&
-                item.y + item.size > player.y
-            ) {
-                if (item.data.type === currentTarget) {
-                    score += 10;
-                    createExplosion(item.x + item.size/2, item.y + item.size/2, '#00b894');
-                    AudioEngine.playCorrect();
-                } else {
-                    lives--;
-                    createExplosion(item.x + item.size/2, item.y + item.size/2, '#ff7675');
-                    AudioEngine.playWrong();
-                    canvas.style.transform = "translate(5px, 5px)";
-                    setTimeout(() => canvas.style.transform = "none", 50);
-                }
-                items.splice(i, 1);
-                updateUI();
-                continue;
+            // Spawn rate per level
+            if (Math.random() < 0.01 + (currentLevel * 0.005)) {
+                let min = idx === 0 ? 0 : canvas.width/2;
+                let max = idx === 0 ? canvas.width/2 : canvas.width;
+                spawnItem(p, min, max);
             }
 
-            if (item.y > canvas.height) items.splice(i, 1);
-        }
+            for (let i = p.items.length - 1; i >= 0; i--) {
+                let it = p.items[i];
+                it.y += it.speed;
 
-        // Particles
-        for (let i = particles.length - 1; i >= 0; i--) {
-            let p = particles[i];
-            p.x += p.vx; p.y += p.vy; p.life -= 0.03;
-            if (p.life <= 0) particles.splice(i, 1);
-        }
+                if (it.x < p.x + p.w && it.x + it.size > p.x && it.y < p.y + p.h && it.y + it.size > p.y) {
+                    if (it.data.type === p.target) {
+                        p.score += 10; AudioEngine.playCorrect();
+                    } else {
+                        p.lives--; AudioEngine.playWrong();
+                    }
+                    p.items.splice(i, 1);
+                    document.getElementById(`scoreP${idx+1}`).innerText = p.score;
+                    document.getElementById(`livesP${idx+1}`).innerText = "❤️".repeat(p.lives);
+                    continue;
+                }
+                if (it.y > canvas.height) p.items.splice(i, 1);
+            }
+        });
 
-        if (lives <= 0) endGame();
+        if (p1.lives <= 0 && p2.lives <= 0) endGame();
     }
 
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // -- DRAW PLAYER (KERANJANG) --
-        ctx.save();
-        ctx.shadowColor = "#0984e3"; ctx.shadowBlur = 20;
-        ctx.fillStyle = "#dfe6e9";
-        
-        ctx.beginPath();
-        ctx.moveTo(player.x, player.y);
-        ctx.lineTo(player.x + player.width, player.y);
-        ctx.lineTo(player.x + player.width - 15, player.y + player.height);
-        ctx.lineTo(player.x + 15, player.y + player.height);
-        ctx.closePath();
-        ctx.fill();
-        
-        ctx.strokeStyle = "#74b9ff"; ctx.lineWidth = 3; ctx.stroke();
-        ctx.fillStyle = "#2d3436"; ctx.font = "30px Arial"; ctx.textAlign = "center";
-        ctx.fillText("📥", player.x + player.width/2, player.y + 50);
+        [p1, p2].forEach(p => {
+            // Draw Basket
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.roundRect(p.x, p.y, p.w, p.h, 15);
+            ctx.fill();
+            ctx.fillStyle = "white"; ctx.textAlign = "center"; ctx.font = "bold 20px Arial";
+            ctx.fillText("📥 " + p.label, p.x + p.w/2, p.y + 45);
 
-        // --- MISI YANG MENEMPEL (MOVING MISSION BADGE) ---
-        // Gambar kotak misi di atas keranjang
-        const badgeW = 160;
-        const badgeH = 40;
-        const badgeX = player.x + (player.width/2) - (badgeW/2);
-        const badgeY = player.y - 50; // Di atas keranjang
+            // Mission Badge (Melayang di atas keranjang)
+            const badgeW = 140; const badgeY = p.y - 50;
+            ctx.fillStyle = "rgba(255,255,255,0.9)";
+            ctx.beginPath(); ctx.roundRect(p.x + (p.w/2 - badgeW/2), badgeY, badgeW, 35, 10); ctx.fill();
+            ctx.fillStyle = "#333"; ctx.font = "bold 14px Arial";
+            ctx.fillText("MISI: " + p.target, p.x + p.w/2, badgeY + 22);
 
-        // Background Badge
-        ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
-        ctx.beginPath();
-        ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 20);
-        ctx.fill();
-        
-        // Border Badge (Warnanya berubah sesuai target)
-        let borderColor = "#333";
-        if(currentTarget === 'UNSUR') borderColor = "#e67e22";
-        if(currentTarget === 'SENYAWA') borderColor = "#0984e3";
-        if(currentTarget === 'CAMPURAN') borderColor = "#00b894";
-        
-        ctx.strokeStyle = borderColor;
-        ctx.lineWidth = 4;
-        ctx.stroke();
-
-        // Teks Misi
-        ctx.fillStyle = borderColor;
-        ctx.font = "bold 16px Arial";
-        ctx.fillText("MISI: " + currentTarget, badgeX + badgeW/2, badgeY + 26);
-        
-        // Garis penghubung kecil ke keranjang (biar terlihat menempel)
-        ctx.beginPath();
-        ctx.moveTo(player.x + player.width/2, player.y);
-        ctx.lineTo(player.x + player.width/2, player.y - 10);
-        ctx.stroke();
-
-        ctx.restore();
-
-        // -- DRAW ITEMS --
-        items.forEach(item => {
-            const cx = item.x + item.size/2;
-            const cy = item.y + item.size/2;
-            const r = item.size/2;
-
-            ctx.save();
-            ctx.translate(cx, cy);
-            ctx.rotate(item.rot);
-
-            ctx.shadowColor = item.data.color; ctx.shadowBlur = 15;
-            ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI*2);
-            ctx.fillStyle = "rgba(30, 39, 46, 0.8)"; ctx.fill();
-            ctx.lineWidth = 3; ctx.strokeStyle = item.data.color; ctx.stroke();
-            
-            ctx.shadowBlur = 0;
-            ctx.beginPath(); ctx.arc(-r*0.3, -r*0.3, r*0.2, 0, Math.PI*2);
-            ctx.fillStyle = "rgba(255, 255, 255, 0.3)"; ctx.fill();
-
-            ctx.shadowColor = "black"; ctx.shadowBlur = 4;
-            ctx.fillStyle = "white"; ctx.font = "bold 18px Arial"; 
-            ctx.textAlign = "center"; ctx.textBaseline = "middle";
-            ctx.fillText(item.data.name, 0, -5);
-            
-            if(item.data.formula) {
-                ctx.font = "14px Arial"; ctx.fillStyle = item.data.color; 
-                ctx.fillText(item.data.formula, 0, 15);
-            }
-            ctx.restore();
+            // Draw Items
+            p.items.forEach(it => {
+                ctx.save();
+                ctx.shadowBlur = 10; ctx.shadowColor = it.data.color;
+                ctx.beginPath(); ctx.arc(it.x + it.size/2, it.y + it.size/2, it.size/2, 0, Math.PI*2);
+                ctx.fillStyle = "white"; ctx.fill();
+                ctx.strokeStyle = it.data.color; ctx.lineWidth = 3; ctx.stroke();
+                ctx.fillStyle = "black"; ctx.font = "bold 14px Arial";
+                ctx.fillText(it.data.name, it.x + it.size/2, it.y + it.size/2 + 5);
+                ctx.restore();
+            });
         });
 
-        // -- PARTICLES --
-        particles.forEach(p => {
-            ctx.globalAlpha = p.life; ctx.fillStyle = p.color;
-            ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
-            ctx.globalAlpha = 1.0;
-        });
-
-        requestAnimationFrame(() => { update(); draw(); });
+        if (isPlaying) requestAnimationFrame(draw);
     }
 
-    function updateUI() {
-        document.getElementById('scoreDisplay').innerText = score;
-        document.getElementById('livesDisplay').innerText = "❤️".repeat(lives);
-    }
-
-    // UPDATE: StartGame menerima parameter level
-    function startGame(levelInput) {
-        currentLevel = levelInput || 1; // Default level 1
-        score = 0; lives = 3; items = []; particles = []; currentTarget = "UNSUR";
-        
+    function startGame(lvl) {
+        currentLevel = lvl;
         document.getElementById('startScreen').classList.add('hidden');
-        document.getElementById('gameOverScreen').classList.add('hidden');
-        document.getElementById('dragHint').style.display = 'none';
-        
-        AudioEngine.ctx.resume();
-        isPlaying = true;
-        updateUI();
+        isPlaying = true; AudioEngine.ctx.resume();
+        updateInterval = setInterval(update, 1000/60);
         draw();
     }
 
     function endGame() {
-        isPlaying = false;
-        document.getElementById('finalScore').innerText = score;
+        isPlaying = false; clearInterval(updateInterval);
         document.getElementById('gameOverScreen').classList.remove('hidden');
+        document.getElementById('finalScoreP1').innerText = p1.score;
+        document.getElementById('finalScoreP2').innerText = p2.score;
+        let winMsg = p1.score > p2.score ? "PEMAIN 1 MENANG! 🏆" : (p2.score > p1.score ? "PEMAIN 2 MENANG! 🏆" : "SERI! 🤝");
+        document.getElementById('winnerTitle').innerText = winMsg;
     }
 
-    function toggleMute() {
-        AudioEngine.muted = !AudioEngine.muted;
-        document.querySelector('.mute-btn').innerText = AudioEngine.muted ? "🔇" : "🔊";
-    }
-
-    draw();
-
+    function toggleMute() { AudioEngine.muted = !AudioEngine.muted; document.querySelector('.mute-btn').innerText = AudioEngine.muted ? "🔇" : "🔊"; }
 </script>
 </body>
 </html>
