@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kimia Duel: 5 Lives Edition</title>
+    <title>Kimia Duel: 5 Lab Lives</title>
     <style>
         body { margin: 0; overflow: hidden; background: #1e272e; font-family: 'Segoe UI', sans-serif; touch-action: none; }
         #gameCanvas { display: block; width: 100%; height: 100vh; }
@@ -11,11 +11,11 @@
         .ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
         
         .stats { position: absolute; top: 20px; width: 42%; display: flex; flex-direction: column; color: white; font-weight: bold; text-shadow: 0 0 10px rgba(0,0,0,0.5); }
-        #statsP1 { left: 4%; text-align: left; color: #74b9ff; }
-        #statsP2 { right: 4%; text-align: right; color: #ff7675; }
-
-        .score-text { font-size: 1.4em; margin-bottom: 5px; }
-        .lives-text { font-size: 1.2em; letter-spacing: 2px; }
+        #statsP1 { left: 4%; align-items: flex-start; color: #74b9ff; }
+        #statsP2 { right: 4%; align-items: flex-end; color: #ff7675; }
+        
+        .score-val { font-size: 1.5em; }
+        .lives-val { font-size: 1.1em; margin-top: 5px; letter-spacing: 2px; }
 
         .modal { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
@@ -51,20 +51,20 @@
 
     <div class="ui-layer">
         <div id="statsP1" class="stats">
-            <div class="score-text">P1: <span id="scoreP1">0</span></div>
-            <div class="lives-text" id="livesP1">🧪🧪🧪🧪🧪</div>
+            <div class="score-val">P1 ✨ <span id="scoreP1">0</span></div>
+            <div class="lives-val" id="livesP1">🧪🧪🧪🧪🧪</div>
         </div>
         <div id="statsP2" class="stats">
-            <div class="score-text">P2: <span id="scoreP2">0</span></div>
-            <div class="lives-text" id="livesP2">🧪🧪🧪🧪🧪</div>
+            <div class="score-val">P2 ✨ <span id="scoreP2">0</span></div>
+            <div class="lives-val" id="livesP2">🧪🧪🧪🧪🧪</div>
         </div>
         <button class="mute-btn" onclick="toggleMute()">🔊</button>
     </div>
 
     <div id="startScreen" class="modal">
-        <div style="font-size: 3em;">🧪🔥</div>
-        <h1 style="font-size: 3em; margin: 0; color: #f1c40f;">KIMIA DUEL</h1>
-        <p>Bertahanlah dengan 5 tabung reaksi! Tangkap benda sesuai misi.</p>
+        <div style="font-size: 3em;">🧪🔋</div>
+        <h1 style="font-size: 3em; margin: 0; color: #f1c40f;">KIMIA DUEL: 5 LIVES</h1>
+        <p>Tangkap zat yang benar untuk ganti misi. Jangan pecahkan tabungmu!</p>
         <div class="level-container">
             <button class="lvl-btn l1" onclick="startGame(1)">1</button>
             <button class="lvl-btn l2" onclick="startGame(2)">2</button>
@@ -77,10 +77,10 @@
     <div id="gameOverScreen" class="modal hidden">
         <h1 id="winnerTitle" style="font-size: 3em;">HASIL DUEL</h1>
         <div style="display: flex; gap: 50px; margin: 20px 0;">
-            <div>P1: <span id="finalScoreP1">0</span></div>
-            <div>P2: <span id="finalScoreP2">0</span></div>
+            <div>P1 Skor: <span id="finalScoreP1">0</span></div>
+            <div>P2 Skor: <span id="finalScoreP2">0</span></div>
         </div>
-        <button onclick="location.reload()" style="padding: 15px 40px; font-size: 1.5em; border-radius: 50px; background: #6c5ce7; color: white; border: none; cursor: pointer;">MAIN LAGI 🔄</button>
+        <button onclick="location.reload()" style="padding: 15px 40px; font-size: 1.5em; border-radius: 50px; background: #6c5ce7; color: white; border: none; cursor: pointer;">REMATCH 🔄</button>
     </div>
 
 <script>
@@ -109,7 +109,7 @@
     let isPlaying = false;
     let currentLevel = 1;
 
-    // --- UPDATE: NYAWA JADI 5 ---
+    // NYAWA DISET KE 5
     const p1 = { x: 0, y: 0, w: 140, h: 80, score: 0, lives: 5, target: "UNSUR", items: [], color: "#74b9ff", label: "P1" };
     const p2 = { x: 0, y: 0, w: 140, h: 80, score: 0, lives: 5, target: "SENYAWA", items: [], color: "#ff7675", label: "P2" };
 
@@ -118,8 +118,7 @@
         muted: false,
         playTone: function(f, t, d) { if(this.muted) return; const o = this.ctx.createOscillator(); const g = this.ctx.createGain(); o.type = t; o.frequency.value = f; g.gain.setValueAtTime(0.1, this.ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime+d); o.connect(g); g.connect(this.ctx.destination); o.start(); o.stop(this.ctx.currentTime+d); },
         playCorrect: function() { this.playTone(800, 'sine', 0.2); },
-        playWrong: function() { this.playTone(150, 'sawtooth', 0.3); },
-        playSwitch: function() { this.playTone(400, 'square', 0.1); setTimeout(()=>this.playTone(600, 'square', 0.1), 100); }
+        playWrong: function() { this.playTone(150, 'sawtooth', 0.3); }
     };
 
     function resize() {
@@ -153,14 +152,14 @@
     function spawnItem(player, sideMin, sideMax) {
         const sub = substances[Math.floor(Math.random() * substances.length)];
         const size = 70;
-        let baseSpeed = 0.5 + (currentLevel * 0.5) + (Math.random() * 0.4);
+        let baseSpeed = 0.5 + (currentLevel * 0.6) + (Math.random() * 0.5);
         player.items.push({ x: sideMin + Math.random() * (sideMax - sideMin - size), y: -100, size, data: sub, speed: baseSpeed });
     }
 
     function switchTarget(player) {
         const others = targets.filter(t => t !== player.target);
         player.target = others[Math.floor(Math.random() * others.length)];
-        AudioEngine.playSwitch();
+        AudioEngine.playTone(600, 'square', 0.1);
     }
 
     function update() {
@@ -174,7 +173,7 @@
         [p1, p2].forEach((p, idx) => {
             if (p.lives <= 0) return;
             
-            if (Math.random() < 0.01 + (currentLevel * 0.004)) {
+            if (Math.random() < 0.01 + (currentLevel * 0.005)) {
                 let min = idx === 0 ? 0 : canvas.width/2;
                 let max = idx === 0 ? canvas.width/2 : canvas.width;
                 spawnItem(p, min, max);
@@ -186,16 +185,14 @@
 
                 if (it.x < p.x + p.w && it.x + it.size > p.x && it.y < p.y + p.h && it.y + it.size > p.y) {
                     if (it.data.type === p.target) {
-                        p.score += 10; 
-                        AudioEngine.playCorrect();
+                        p.score += 10; AudioEngine.playCorrect();
                         switchTarget(p);
                     } else {
-                        p.lives--; 
-                        AudioEngine.playWrong();
+                        p.lives--; AudioEngine.playWrong();
                     }
                     p.items.splice(i, 1);
                     document.getElementById(`scoreP${idx+1}`).innerText = p.score;
-                    // --- UPDATE UI NYAWA TABUNG ---
+                    // UPDATE VISUAL TABUNG REAKSI
                     document.getElementById(`livesP${idx+1}`).innerText = "🧪".repeat(p.lives);
                     continue;
                 }
@@ -210,6 +207,14 @@
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         [p1, p2].forEach(p => {
+            if (p.lives <= 0) {
+                ctx.fillStyle = "rgba(0,0,0,0.4)";
+                ctx.fillRect(p === p1 ? 0 : canvas.width/2, 0, canvas.width/2, canvas.height);
+                ctx.fillStyle = "white"; ctx.font = "bold 30px Arial";
+                ctx.fillText("OUT", p.x + p.w/2, p.y);
+                return;
+            }
+
             ctx.fillStyle = p.color;
             ctx.beginPath(); ctx.roundRect(p.x, p.y, p.w, p.h, 15); ctx.fill();
             ctx.fillStyle = "white"; ctx.textAlign = "center"; ctx.font = "bold 20px Arial";
@@ -219,13 +224,9 @@
             ctx.fillStyle = "rgba(255,255,255,0.95)";
             ctx.beginPath(); ctx.roundRect(p.x + (p.w/2 - badgeW/2), badgeY, badgeW, 40, 20); ctx.fill();
             
-            let accentColor = "#333";
-            if(p.target === 'UNSUR') accentColor = "#e67e22";
-            if(p.target === 'SENYAWA') accentColor = "#0984e3";
-            if(p.target === 'CAMPURAN') accentColor = "#00b894";
-
-            ctx.strokeStyle = accentColor; ctx.lineWidth = 3; ctx.stroke();
-            ctx.fillStyle = accentColor; ctx.font = "bold 15px Arial";
+            let accent = p.target === 'UNSUR' ? "#e67e22" : (p.target === 'SENYAWA' ? "#0984e3" : "#00b894");
+            ctx.strokeStyle = accent; ctx.lineWidth = 3; ctx.stroke();
+            ctx.fillStyle = accent; ctx.font = "bold 15px Arial";
             ctx.fillText("MISI: " + p.target, p.x + p.w/2, badgeY + 25);
 
             p.items.forEach(it => {
@@ -234,13 +235,8 @@
                 ctx.beginPath(); ctx.arc(it.x + it.size/2, it.y + it.size/2, it.size/2, 0, Math.PI*2);
                 ctx.fillStyle = "white"; ctx.fill();
                 ctx.strokeStyle = it.data.color; ctx.lineWidth = 3; ctx.stroke();
-                
                 ctx.fillStyle = "black"; ctx.font = "bold 14px Arial";
                 ctx.fillText(it.data.name, it.x + it.size/2, it.y + it.size/2);
-                if(it.data.formula) {
-                    ctx.font = "12px Arial"; ctx.fillStyle = "#666";
-                    ctx.fillText(it.data.formula, it.x + it.size/2, it.y + it.size/2 + 18);
-                }
                 ctx.restore();
             });
         });
@@ -261,7 +257,7 @@
         document.getElementById('gameOverScreen').classList.remove('hidden');
         document.getElementById('finalScoreP1').innerText = p1.score;
         document.getElementById('finalScoreP2').innerText = p2.score;
-        let winMsg = p1.score > p2.score ? "P1 MENANG! 🏆" : (p2.score > p1.score ? "P2 MENANG! 🏆" : "SERI! 🤝");
+        let winMsg = p1.score > p2.score ? "P1 MENANG! 🧪" : (p2.score > p1.score ? "P2 MENANG! 🧪" : "SERI! 🤝");
         document.getElementById('winnerTitle').innerText = winMsg;
     }
 
