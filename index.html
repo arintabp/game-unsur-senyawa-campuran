@@ -3,61 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kimia Catcher: Swipe Edition</title>
+    <title>Kimia Catcher: Glow Edition</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #2c3e50; font-family: 'Segoe UI', sans-serif; touch-action: none; }
+        body { margin: 0; overflow: hidden; background: #1e272e; font-family: 'Segoe UI', sans-serif; touch-action: none; }
         
-        /* UI LAYERS */
-        #gameCanvas { display: block; width: 100%; height: 100vh; cursor: crosshair; }
+        #gameCanvas { display: block; width: 100%; height: 100vh; cursor: none; /* Sembunyikan kursor agar tidak menghalangi */ }
         
         .ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; flex-direction: column; }
         
-        /* HEADER INFO */
-        .header { padding: 15px; display: flex; justify-content: space-between; color: white; font-weight: bold; font-size: 1.2em; text-shadow: 2px 2px 0 #000; z-index: 10; }
+        .header { padding: 20px; display: flex; justify-content: space-between; color: white; font-weight: bold; font-size: 1.5em; text-shadow: 0 0 10px rgba(255,255,255,0.5); z-index: 10; }
         
-        /* TARGET BOX */
         .target-box { 
-            align-self: center; 
-            margin-top: 10px; 
-            padding: 10px 30px; 
-            background: rgba(255, 255, 255, 0.9); 
-            border-radius: 50px; 
-            border: 4px solid #f1c40f; 
-            text-align: center; 
-            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            align-self: center; margin-top: 10px; padding: 15px 40px; 
+            background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px);
+            border-radius: 50px; border: 2px solid rgba(255,255,255,0.3);
+            text-align: center; box-shadow: 0 0 30px rgba(255,255,255,0.1);
             transition: transform 0.3s;
         }
-        .target-label { font-size: 0.8em; color: #7f8c8d; letter-spacing: 2px; text-transform: uppercase; }
-        .target-text { font-size: 1.8em; font-weight: 900; color: #2c3e50; margin: 0; }
+        .target-label { font-size: 0.9em; color: #ccc; letter-spacing: 2px; text-transform: uppercase; }
+        .target-text { font-size: 2.5em; font-weight: 900; color: white; margin: 5px 0 0 0; text-shadow: 0 0 20px currentColor; }
         .pulse { animation: pulse 0.5s infinite alternate; }
         @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.1); } }
 
-        /* SCREENS */
         .modal { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.85); 
+            background: rgba(0,0,0,0.9); 
             display: flex; flex-direction: column; justify-content: center; align-items: center; 
             pointer-events: auto; z-index: 20; color: white; text-align: center;
         }
         .hidden { display: none !important; }
         
         button { 
-            padding: 15px 40px; font-size: 1.5em; border: none; border-radius: 50px; 
-            background: #27ae60; color: white; cursor: pointer; font-weight: bold; 
-            box-shadow: 0 5px 0 #219150; margin-top: 20px; transition: 0.2s; 
+            padding: 20px 50px; font-size: 1.5em; border: none; border-radius: 50px; 
+            background: linear-gradient(45deg, #00b894, #00cec9); color: white; cursor: pointer; font-weight: bold; 
+            box-shadow: 0 0 20px rgba(0, 184, 148, 0.5); margin-top: 30px; transition: 0.2s; 
         }
-        button:active { transform: translateY(5px); box-shadow: none; }
-        button:hover { background: #2ecc71; }
-
-        /* TOMBOL MUTE */
-        .mute-btn { position: absolute; bottom: 20px; right: 20px; z-index: 30; background: transparent; border: none; font-size: 1.5em; cursor: pointer; pointer-events: auto; }
-
-        /* INSTRUKSI GESER */
+        button:active { transform: scale(0.95); }
+        
         .drag-hint {
             position: absolute; bottom: 20%; width: 100%; text-align: center;
             color: rgba(255,255,255,0.5); font-size: 1.2em; animation: fadeBlink 2s infinite;
         }
         @keyframes fadeBlink { 0%,100% {opacity: 0.3} 50% {opacity: 0.8} }
+        
+        .mute-btn { position: absolute; bottom: 20px; right: 20px; z-index: 30; background: rgba(255,255,255,0.2); color:white; border-radius: 50%; width:50px; height:50px; border: none; font-size: 1.5em; cursor: pointer; pointer-events: auto; display:flex; justify-content:center; align-items:center;}
 
     </style>
 </head>
@@ -68,54 +57,52 @@
     <div class="ui-layer">
         <div class="header">
             <div>❤️ <span id="livesDisplay">3</span></div>
-            <div>🏆 <span id="scoreDisplay">0</span></div>
+            <div>✨ <span id="scoreDisplay">0</span></div>
         </div>
         
         <div id="targetBox" class="target-box">
-            <div class="target-label">MISI: TANGKAP</div>
+            <div class="target-label">MISI SAAT INI</div>
             <div id="targetText" class="target-text">UNSUR</div>
         </div>
 
-        <div id="dragHint" class="drag-hint">👈 Geser jari/mouse untuk bergerak 👉</div>
+        <div id="dragHint" class="drag-hint">👋 Geser Mouse / Jari untuk Menangkap</div>
     </div>
 
     <div id="startScreen" class="modal">
-        <h1 style="font-size: 3em; margin-bottom: 0; color: #f1c40f;">KIMIA CATCHER</h1>
-        <p>Unsur, Senyawa, atau Campuran?</p>
-        <div style="font-size: 0.9em; max-width: 400px; line-height: 1.5; color: #bdc3c7; margin-bottom: 20px;">
-            Gerakkan keranjang dengan <b>menggeser jari/mouse</b>.<br>
-            Tangkap zat yang sesuai dengan MISI!
-        </div>
-        <button onclick="startGame()">MULAI MAIN ▶️</button>
+        <div style="font-size: 4em; margin-bottom: 10px;">🧪</div>
+        <h1 style="font-size: 3.5em; margin: 0; background: linear-gradient(to right, #00b894, #0984e3); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">KIMIA CATCHER</h1>
+        <p style="font-size: 1.2em; color: #dfe6e9;">Sortir Zat Jatuh dengan Cepat!</p>
+        <button onclick="startGame()">MULAI MAIN</button>
     </div>
 
     <div id="gameOverScreen" class="modal hidden">
-        <h1 style="color: #e74c3c;">GAME OVER</h1>
-        <p>Skor Akhir Kamu:</p>
-        <h2 style="font-size: 4em; margin: 10px 0;" id="finalScore">0</h2>
-        <button onclick="startGame()">MAIN LAGI 🔄</button>
+        <h1 style="color: #ff7675;">GAME OVER</h1>
+        <p>Skor Akhir:</p>
+        <h2 style="font-size: 5em; margin: 10px 0; color: #fab1a0;" id="finalScore">0</h2>
+        <button onclick="startGame()">COBA LAGI 🔄</button>
     </div>
 
     <button class="mute-btn" onclick="toggleMute()">🔊</button>
 
 <script>
     // --- DATABASE ---
+    // Warna di sini adalah warna "Glow" neon-nya
     const substances = [
-        { name: "Emas", formula: "Au", type: "UNSUR", color: "#f1c40f" },
-        { name: "Oksigen", formula: "O2", type: "UNSUR", color: "#3498db" },
-        { name: "Besi", formula: "Fe", type: "UNSUR", color: "#95a5a6" },
-        { name: "Karbon", formula: "C", type: "UNSUR", color: "#34495e" },
-        { name: "Helium", formula: "He", type: "UNSUR", color: "#e74c3c" },
-        { name: "Air", formula: "H2O", type: "SENYAWA", color: "#2980b9" },
-        { name: "Garam", formula: "NaCl", type: "SENYAWA", color: "#ecf0f1" },
-        { name: "Gula", formula: "C12H22O11", type: "SENYAWA", color: "#f39c12" },
-        { name: "Karbon Dioksida", formula: "CO2", type: "SENYAWA", color: "#7f8c8d" },
-        { name: "Asam Cuka", formula: "CH3COOH", type: "SENYAWA", color: "#d35400" },
-        { name: "Udara", formula: "", type: "CAMPURAN", color: "#bdc3c7" },
-        { name: "Air Laut", formula: "", type: "CAMPURAN", color: "#1abc9c" },
-        { name: "Perunggu", formula: "", type: "CAMPURAN", color: "#d35400" },
-        { name: "Tanah", formula: "", type: "CAMPURAN", color: "#8e44ad" },
-        { name: "Susu", formula: "", type: "CAMPURAN", color: "#fff" }
+        { name: "Emas", formula: "Au", type: "UNSUR", color: "#f1c40f" },     // Kuning Emas
+        { name: "Oksigen", formula: "O2", type: "UNSUR", color: "#00cec9" },   // Cyan
+        { name: "Besi", formula: "Fe", type: "UNSUR", color: "#b2bec3" },      // Silver
+        { name: "Karbon", formula: "C", type: "UNSUR", color: "#636e72" },     // Abu Gelap
+        { name: "Helium", formula: "He", type: "UNSUR", color: "#ff7675" },    // Pink Merah
+        { name: "Air", formula: "H2O", type: "SENYAWA", color: "#0984e3" },   // Biru Laut
+        { name: "Garam", formula: "NaCl", type: "SENYAWA", color: "#dfe6e9" }, // Putih
+        { name: "Gula", formula: "C12..", type: "SENYAWA", color: "#fdcb6e" }, // Kuning Pucat
+        { name: "CO2", formula: "Gas", type: "SENYAWA", color: "#a29bfe" },    // Ungu Pucat
+        { name: "Cuka", formula: "Asam", type: "SENYAWA", color: "#e17055" },  // Oranye
+        { name: "Udara", formula: "", type: "CAMPURAN", color: "#74b9ff" },    // Biru Langit
+        { name: "Sirup", formula: "", type: "CAMPURAN", color: "#d63031" },    // Merah Sirup
+        { name: "Perunggu", formula: "", type: "CAMPURAN", color: "#e84393" }, // Magenta
+        { name: "Tanah", formula: "", type: "CAMPURAN", color: "#8e44ad" },    // Ungu Tanah
+        { name: "Susu", formula: "", type: "CAMPURAN", color: "#fff" }         // Putih Susu
     ];
 
     const targets = ["UNSUR", "SENYAWA", "CAMPURAN"];
@@ -131,7 +118,8 @@
     let targetTimer = 0;
     let speedMultiplier = 1;
     
-    const player = { x: 0, y: 0, width: 100, height: 60 };
+    // Player lebih besar
+    const player = { x: 0, y: 0, width: 120, height: 70 }; 
     let items = [];
     let particles = [];
     let spawnTimer = 0;
@@ -152,69 +140,58 @@
             osc.connect(gain); gain.connect(this.ctx.destination);
             osc.start(); osc.stop(this.ctx.currentTime + duration);
         },
-        playCorrect: function() { this.playTone(600, 'sine', 0.2); setTimeout(()=>this.playTone(900, 'sine', 0.4), 100); },
+        playCorrect: function() { this.playTone(800, 'sine', 0.1); setTimeout(()=>this.playTone(1200, 'sine', 0.2), 100); },
         playWrong: function() { this.playTone(150, 'sawtooth', 0.4); },
-        playSwitch: function() { this.playTone(400, 'square', 0.1); setTimeout(()=>this.playTone(400, 'square', 0.1), 150); }
+        playSwitch: function() { this.playTone(400, 'square', 0.1); setTimeout(()=>this.playTone(600, 'square', 0.1), 150); }
     };
 
-    // --- INPUT HANDLER (TOUCH & MOUSE) ---
-    // Fungsi untuk mengupdate posisi keranjang
+    // --- MOVEMENT ---
     function updatePlayerPosition(clientX) {
         if (!isPlaying) return;
         const rect = canvas.getBoundingClientRect();
-        // Hitung posisi X mouse/jari relatif terhadap canvas
         let newX = clientX - rect.left - (player.width / 2);
-        
-        // Batasi agar tidak keluar layar (Clamping)
         if (newX < 0) newX = 0;
         if (newX > canvas.width - player.width) newX = canvas.width - player.width;
-        
         player.x = newX;
     }
+    canvas.addEventListener('mousemove', (e) => updatePlayerPosition(e.clientX));
+    canvas.addEventListener('touchmove', (e) => { e.preventDefault(); updatePlayerPosition(e.touches[0].clientX); }, { passive: false });
 
-    // Mouse Movement
-    canvas.addEventListener('mousemove', (e) => {
-        updatePlayerPosition(e.clientX);
-    });
-
-    // Touch Movement (HP/Tablet)
-    canvas.addEventListener('touchmove', (e) => {
-        e.preventDefault(); // Mencegah layar ikut tergeser (scroll)
-        updatePlayerPosition(e.touches[0].clientX);
-    }, { passive: false });
-
-    // --- RESIZE ---
     function resize() {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
-        player.y = canvas.height - 100;
+        player.y = canvas.height - 120; // Posisi keranjang agak naik
         if(player.x > canvas.width - player.width) player.x = canvas.width - player.width;
     }
     window.addEventListener('resize', resize);
     resize();
     player.x = canvas.width / 2 - player.width / 2;
 
-    // --- GAME LOGIC ---
+    // --- LOGIC ---
     function spawnItem() {
         const sub = substances[Math.floor(Math.random() * substances.length)];
-        const size = 50;
+        // UKURAN LEBIH BESAR
+        const size = 70; 
         const x = Math.random() * (canvas.width - size);
         
-        // KECEPATAN: Diperlambat (Base speed turun dari 2 ke 1.5)
-        const baseSpeed = 1.5 + (Math.random() * 1.5); 
+        // KECEPATAN SANGAT PELAN (Start dari 0.8)
+        const baseSpeed = 0.8 + (Math.random() * 0.5); 
         
         items.push({
-            x: x,
-            y: -60,
-            size: size,
-            data: sub,
-            speed: baseSpeed * speedMultiplier
+            x: x, y: -80, size: size, data: sub,
+            speed: baseSpeed * speedMultiplier,
+            rot: Math.random() * Math.PI, // Rotasi random
+            rotSpeed: (Math.random()-0.5) * 0.02
         });
     }
 
     function createExplosion(x, y, color) {
-        for(let i=0; i<15; i++) {
-            particles.push({ x: x, y: y, vx: (Math.random()-0.5)*10, vy: (Math.random()-0.5)*10, life: 1.0, color: color });
+        for(let i=0; i<20; i++) {
+            particles.push({ 
+                x: x, y: y, 
+                vx: (Math.random()-0.5)*15, vy: (Math.random()-0.5)*15, 
+                life: 1.0, color: color, size: Math.random()*5 + 2 
+            });
         }
     }
 
@@ -228,49 +205,55 @@
         box.classList.add('pulse'); setTimeout(() => box.classList.remove('pulse'), 1000);
         text.innerText = currentTarget;
         
-        if(currentTarget === 'UNSUR') text.style.color = "#e67e22";
-        if(currentTarget === 'SENYAWA') text.style.color = "#2980b9";
-        if(currentTarget === 'CAMPURAN') text.style.color = "#27ae60";
+        // Warna text sesuai target
+        if(currentTarget === 'UNSUR') text.style.color = "#ffeaa7";
+        if(currentTarget === 'SENYAWA') text.style.color = "#74b9ff";
+        if(currentTarget === 'CAMPURAN') text.style.color = "#55efc4";
         AudioEngine.playSwitch();
     }
 
     function update() {
         if (!isPlaying) return;
 
-        // Difficulty (Naik pelan-pelan)
-        speedMultiplier = 1 + (score * 0.01); 
+        // Kenaikan kecepatan SANGAT PELAN
+        speedMultiplier = 1 + (score * 0.005); 
         
         targetTimer++;
-        if (targetTimer > 600) { switchTarget(); targetTimer = 0; }
+        if (targetTimer > 800) { switchTarget(); targetTimer = 0; } // Ganti target lebih lama
 
         spawnTimer++;
-        if (spawnTimer > 70) { // Spawn lebih jarang sedikit
+        if (spawnTimer > 90) { // Spawn lebih jarang
             spawnItem();
-            spawnTimer = 0 - (score * 1.5); 
+            spawnTimer = 0 - (score * 0.5); 
         }
 
-        // Items Logic
+        // Items
         for (let i = items.length - 1; i >= 0; i--) {
             let item = items[i];
             item.y += item.speed;
+            item.rot += item.rotSpeed;
 
-            // Collision
+            // Hitbox agak dimaafkan (lebih kecil dari gambar visual)
+            const hitX = item.x + 10;
+            const hitW = item.size - 20;
+
             if (
-                item.x < player.x + player.width &&
-                item.x + item.size > player.x &&
+                hitX < player.x + player.width &&
+                hitX + hitW > player.x &&
                 item.y < player.y + player.height &&
                 item.y + item.size > player.y
             ) {
                 if (item.data.type === currentTarget) {
                     score += 10;
-                    createExplosion(item.x, item.y, '#2ecc71');
+                    createExplosion(item.x + item.size/2, item.y + item.size/2, '#00b894');
                     AudioEngine.playCorrect();
                 } else {
                     lives--;
-                    createExplosion(item.x, item.y, '#e74c3c');
+                    createExplosion(item.x + item.size/2, item.y + item.size/2, '#ff7675');
                     AudioEngine.playWrong();
-                    document.body.style.background = "#c0392b";
-                    setTimeout(() => document.body.style.background = "#2c3e50", 100);
+                    // Shake effect
+                    canvas.style.transform = "translate(5px, 5px)";
+                    setTimeout(() => canvas.style.transform = "none", 50);
                 }
                 items.splice(i, 1);
                 updateUI();
@@ -283,7 +266,7 @@
         // Particles
         for (let i = particles.length - 1; i >= 0; i--) {
             let p = particles[i];
-            p.x += p.vx; p.y += p.vy; p.life -= 0.05;
+            p.x += p.vx; p.y += p.vy; p.life -= 0.03;
             if (p.life <= 0) particles.splice(i, 1);
         }
 
@@ -293,33 +276,82 @@
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Player
-        ctx.fillStyle = "#34495e";
-        ctx.fillRect(player.x, player.y, player.width, player.height);
-        ctx.fillStyle = "#f1c40f";
-        ctx.fillRect(player.x, player.y, player.width, 10);
-        ctx.font = "30px Arial"; ctx.textAlign = "center";
-        ctx.fillText("🗑️", player.x + player.width/2, player.y + 40);
+        // -- DRAW PLAYER (KERANJANG FUTURISTIK) --
+        ctx.save();
+        ctx.shadowColor = "#0984e3"; ctx.shadowBlur = 20;
+        ctx.fillStyle = "#dfe6e9";
+        // Bentuk keranjang trapesium
+        ctx.beginPath();
+        ctx.moveTo(player.x, player.y);
+        ctx.lineTo(player.x + player.width, player.y);
+        ctx.lineTo(player.x + player.width - 10, player.y + player.height);
+        ctx.lineTo(player.x + 10, player.y + player.height);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Garis neon
+        ctx.strokeStyle = "#74b9ff"; ctx.lineWidth = 3; ctx.stroke();
+        ctx.fillStyle = "#2d3436"; ctx.font = "30px Arial"; ctx.textAlign = "center";
+        ctx.fillText("📥", player.x + player.width/2, player.y + 45);
+        ctx.restore();
 
-        // Items
+        // -- DRAW ITEMS (3D BUBBLES) --
         items.forEach(item => {
-            ctx.beginPath();
-            ctx.arc(item.x + item.size/2, item.y + item.size/2, item.size/2 + 5, 0, Math.PI*2);
-            ctx.fillStyle = "white"; ctx.fill();
-            ctx.lineWidth = 3; ctx.strokeStyle = item.data.color; ctx.stroke();
+            const cx = item.x + item.size/2;
+            const cy = item.y + item.size/2;
+            const r = item.size/2;
 
-            ctx.fillStyle = "black"; ctx.font = "bold 14px Arial";
-            ctx.fillText(item.data.name, item.x + item.size/2, item.y + item.size/2 - 5);
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.rotate(item.rot);
+
+            // Efek Glow Luar
+            ctx.shadowColor = item.data.color;
+            ctx.shadowBlur = 15;
+
+            // Lingkaran Dasar
+            ctx.beginPath();
+            ctx.arc(0, 0, r, 0, Math.PI*2);
+            ctx.fillStyle = "rgba(30, 39, 46, 0.8)"; // Latar agak gelap
+            ctx.fill();
+
+            // Border Neon Tebal
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = item.data.color;
+            ctx.stroke();
+
+            // Efek Kilap (Glossy) di atas
+            ctx.shadowBlur = 0; // Matikan shadow buat kilap
+            ctx.beginPath();
+            ctx.arc(-r*0.3, -r*0.3, r*0.2, 0, Math.PI*2);
+            ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
+            ctx.fill();
+
+            // TEKS (Lebih besar & Jelas)
+            ctx.shadowColor = "black"; ctx.shadowBlur = 4;
+            ctx.fillStyle = "white";
+            ctx.font = "bold 18px Arial"; 
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            
+            // Nama Zat
+            ctx.fillText(item.data.name, 0, -5);
+            
+            // Rumus Kimia (Kecil di bawahnya)
             if(item.data.formula) {
-                ctx.font = "italic 12px Arial"; ctx.fillStyle = "#555";
-                ctx.fillText(item.data.formula, item.x + item.size/2, item.y + item.size/2 + 15);
+                ctx.font = "14px Arial";
+                ctx.fillStyle = item.data.color; // Warna rumus mengikuti warna zat
+                ctx.fillText(item.data.formula, 0, 15);
             }
+
+            ctx.restore();
         });
 
-        // Particles
+        // -- PARTICLES --
         particles.forEach(p => {
-            ctx.globalAlpha = p.life; ctx.fillStyle = p.color;
-            ctx.beginPath(); ctx.arc(p.x, p.y, 5, 0, Math.PI*2); ctx.fill();
+            ctx.globalAlpha = p.life; 
+            ctx.fillStyle = p.color;
+            ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
             ctx.globalAlpha = 1.0;
         });
 
