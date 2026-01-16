@@ -3,19 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kimia Catcher: Unsur Senyawa Campuran</title>
+    <title>Kimia Catcher: Swipe Edition</title>
     <style>
         body { margin: 0; overflow: hidden; background: #2c3e50; font-family: 'Segoe UI', sans-serif; touch-action: none; }
         
         /* UI LAYERS */
-        #gameCanvas { display: block; width: 100%; height: 100vh; }
+        #gameCanvas { display: block; width: 100%; height: 100vh; cursor: crosshair; }
         
         .ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; flex-direction: column; }
         
         /* HEADER INFO */
         .header { padding: 15px; display: flex; justify-content: space-between; color: white; font-weight: bold; font-size: 1.2em; text-shadow: 2px 2px 0 #000; z-index: 10; }
         
-        /* TARGET BOX (Misi Saat Ini) */
+        /* TARGET BOX */
         .target-box { 
             align-self: center; 
             margin-top: 10px; 
@@ -32,7 +32,7 @@
         .pulse { animation: pulse 0.5s infinite alternate; }
         @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.1); } }
 
-        /* SCREENS (Start/Game Over) */
+        /* SCREENS */
         .modal { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
             background: rgba(0,0,0,0.85); 
@@ -49,22 +49,15 @@
         button:active { transform: translateY(5px); box-shadow: none; }
         button:hover { background: #2ecc71; }
 
-        /* CONTROLS (Mobile) */
-        .controls { 
-            position: absolute; bottom: 20px; width: 100%; 
-            display: flex; justify-content: space-between; padding: 0 20px; box-sizing: border-box; 
-            pointer-events: auto; z-index: 15;
-        }
-        .ctrl-btn { 
-            width: 80px; height: 80px; background: rgba(255,255,255,0.2); 
-            border-radius: 50%; border: 2px solid white; color: white; 
-            font-size: 2em; display: flex; justify-content: center; align-items: center; 
-            user-select: none; cursor: pointer;
-        }
-        .ctrl-btn:active { background: rgba(255,255,255,0.5); }
-
-        /* Sound Button */
+        /* TOMBOL MUTE */
         .mute-btn { position: absolute; bottom: 20px; right: 20px; z-index: 30; background: transparent; border: none; font-size: 1.5em; cursor: pointer; pointer-events: auto; }
+
+        /* INSTRUKSI GESER */
+        .drag-hint {
+            position: absolute; bottom: 20%; width: 100%; text-align: center;
+            color: rgba(255,255,255,0.5); font-size: 1.2em; animation: fadeBlink 2s infinite;
+        }
+        @keyframes fadeBlink { 0%,100% {opacity: 0.3} 50% {opacity: 0.8} }
 
     </style>
 </head>
@@ -83,18 +76,15 @@
             <div id="targetText" class="target-text">UNSUR</div>
         </div>
 
-        <div class="controls" id="mobileControls">
-            <div class="ctrl-btn" id="btnLeft">⬅️</div>
-            <div class="ctrl-btn" id="btnRight">➡️</div>
-        </div>
+        <div id="dragHint" class="drag-hint">👈 Geser jari/mouse untuk bergerak 👉</div>
     </div>
 
     <div id="startScreen" class="modal">
         <h1 style="font-size: 3em; margin-bottom: 0; color: #f1c40f;">KIMIA CATCHER</h1>
-        <p>Sortir Zat: Unsur, Senyawa, atau Campuran</p>
+        <p>Unsur, Senyawa, atau Campuran?</p>
         <div style="font-size: 0.9em; max-width: 400px; line-height: 1.5; color: #bdc3c7; margin-bottom: 20px;">
-            Gerakkan keranjang untuk menangkap zat yang diminta.<br>
-            Hati-hati! Target misi akan berubah-ubah!
+            Gerakkan keranjang dengan <b>menggeser jari/mouse</b>.<br>
+            Tangkap zat yang sesuai dengan MISI!
         </div>
         <button onclick="startGame()">MULAI MAIN ▶️</button>
     </div>
@@ -109,23 +99,18 @@
     <button class="mute-btn" onclick="toggleMute()">🔊</button>
 
 <script>
-    // --- DATABASE MATERI KIMIA ---
+    // --- DATABASE ---
     const substances = [
-        // UNSUR (Elements)
         { name: "Emas", formula: "Au", type: "UNSUR", color: "#f1c40f" },
         { name: "Oksigen", formula: "O2", type: "UNSUR", color: "#3498db" },
         { name: "Besi", formula: "Fe", type: "UNSUR", color: "#95a5a6" },
         { name: "Karbon", formula: "C", type: "UNSUR", color: "#34495e" },
         { name: "Helium", formula: "He", type: "UNSUR", color: "#e74c3c" },
-
-        // SENYAWA (Compounds)
         { name: "Air", formula: "H2O", type: "SENYAWA", color: "#2980b9" },
         { name: "Garam", formula: "NaCl", type: "SENYAWA", color: "#ecf0f1" },
         { name: "Gula", formula: "C12H22O11", type: "SENYAWA", color: "#f39c12" },
         { name: "Karbon Dioksida", formula: "CO2", type: "SENYAWA", color: "#7f8c8d" },
         { name: "Asam Cuka", formula: "CH3COOH", type: "SENYAWA", color: "#d35400" },
-
-        // CAMPURAN (Mixtures)
         { name: "Udara", formula: "", type: "CAMPURAN", color: "#bdc3c7" },
         { name: "Air Laut", formula: "", type: "CAMPURAN", color: "#1abc9c" },
         { name: "Perunggu", formula: "", type: "CAMPURAN", color: "#d35400" },
@@ -135,7 +120,7 @@
 
     const targets = ["UNSUR", "SENYAWA", "CAMPURAN"];
 
-    // --- GAME VARIABLES ---
+    // --- VARIABLES ---
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     
@@ -146,15 +131,12 @@
     let targetTimer = 0;
     let speedMultiplier = 1;
     
-    // Player (Basket)
-    const player = { x: 0, y: 0, width: 100, height: 60, speed: 10, dx: 0 };
-    
-    // Falling Objects
+    const player = { x: 0, y: 0, width: 100, height: 60 };
     let items = [];
     let particles = [];
     let spawnTimer = 0;
 
-    // Audio Context
+    // --- AUDIO ---
     const AudioEngine = {
         ctx: new (window.AudioContext || window.webkitAudioContext)(),
         muted: false,
@@ -167,135 +149,104 @@
             osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
             gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
-            osc.connect(gain);
-            gain.connect(this.ctx.destination);
-            osc.start();
-            osc.stop(this.ctx.currentTime + duration);
+            osc.connect(gain); gain.connect(this.ctx.destination);
+            osc.start(); osc.stop(this.ctx.currentTime + duration);
         },
         playCorrect: function() { this.playTone(600, 'sine', 0.2); setTimeout(()=>this.playTone(900, 'sine', 0.4), 100); },
         playWrong: function() { this.playTone(150, 'sawtooth', 0.4); },
         playSwitch: function() { this.playTone(400, 'square', 0.1); setTimeout(()=>this.playTone(400, 'square', 0.1), 150); }
     };
 
-    // --- RESIZE HANDLING ---
+    // --- INPUT HANDLER (TOUCH & MOUSE) ---
+    // Fungsi untuk mengupdate posisi keranjang
+    function updatePlayerPosition(clientX) {
+        if (!isPlaying) return;
+        const rect = canvas.getBoundingClientRect();
+        // Hitung posisi X mouse/jari relatif terhadap canvas
+        let newX = clientX - rect.left - (player.width / 2);
+        
+        // Batasi agar tidak keluar layar (Clamping)
+        if (newX < 0) newX = 0;
+        if (newX > canvas.width - player.width) newX = canvas.width - player.width;
+        
+        player.x = newX;
+    }
+
+    // Mouse Movement
+    canvas.addEventListener('mousemove', (e) => {
+        updatePlayerPosition(e.clientX);
+    });
+
+    // Touch Movement (HP/Tablet)
+    canvas.addEventListener('touchmove', (e) => {
+        e.preventDefault(); // Mencegah layar ikut tergeser (scroll)
+        updatePlayerPosition(e.touches[0].clientX);
+    }, { passive: false });
+
+    // --- RESIZE ---
     function resize() {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
         player.y = canvas.height - 100;
-        // Keep player inside
         if(player.x > canvas.width - player.width) player.x = canvas.width - player.width;
     }
     window.addEventListener('resize', resize);
     resize();
     player.x = canvas.width / 2 - player.width / 2;
 
-    // --- CONTROLS ---
-    let leftPressed = false;
-    let rightPressed = false;
-
-    document.addEventListener('keydown', (e) => {
-        if(e.key === 'ArrowLeft') leftPressed = true;
-        if(e.key === 'ArrowRight') rightPressed = true;
-    });
-    document.addEventListener('keyup', (e) => {
-        if(e.key === 'ArrowLeft') leftPressed = false;
-        if(e.key === 'ArrowRight') rightPressed = false;
-    });
-
-    // Touch Controls
-    const btnLeft = document.getElementById('btnLeft');
-    const btnRight = document.getElementById('btnRight');
-    
-    const startLeft = () => leftPressed = true;
-    const endLeft = () => leftPressed = false;
-    const startRight = () => rightPressed = true;
-    const endRight = () => rightPressed = false;
-
-    btnLeft.addEventListener('mousedown', startLeft);
-    btnLeft.addEventListener('touchstart', (e) => { e.preventDefault(); startLeft(); });
-    btnLeft.addEventListener('mouseup', endLeft);
-    btnLeft.addEventListener('touchend', endLeft);
-
-    btnRight.addEventListener('mousedown', startRight);
-    btnRight.addEventListener('touchstart', (e) => { e.preventDefault(); startRight(); });
-    btnRight.addEventListener('mouseup', endRight);
-    btnRight.addEventListener('touchend', endRight);
-
     // --- GAME LOGIC ---
-
     function spawnItem() {
         const sub = substances[Math.floor(Math.random() * substances.length)];
         const size = 50;
         const x = Math.random() * (canvas.width - size);
+        
+        // KECEPATAN: Diperlambat (Base speed turun dari 2 ke 1.5)
+        const baseSpeed = 1.5 + (Math.random() * 1.5); 
+        
         items.push({
             x: x,
             y: -60,
             size: size,
             data: sub,
-            speed: (2 + Math.random() * 2) * speedMultiplier
+            speed: baseSpeed * speedMultiplier
         });
     }
 
     function createExplosion(x, y, color) {
         for(let i=0; i<15; i++) {
-            particles.push({
-                x: x, y: y,
-                vx: (Math.random() - 0.5) * 10,
-                vy: (Math.random() - 0.5) * 10,
-                life: 1.0,
-                color: color
-            });
+            particles.push({ x: x, y: y, vx: (Math.random()-0.5)*10, vy: (Math.random()-0.5)*10, life: 1.0, color: color });
         }
     }
 
     function switchTarget() {
         const newTarget = targets[Math.floor(Math.random() * targets.length)];
-        // Pastikan target berubah
-        if (newTarget === currentTarget) {
-            switchTarget();
-            return;
-        }
+        if (newTarget === currentTarget) { switchTarget(); return; }
         currentTarget = newTarget;
         
-        // UI Update
         const box = document.getElementById('targetBox');
         const text = document.getElementById('targetText');
-        
-        box.classList.add('pulse');
-        setTimeout(() => box.classList.remove('pulse'), 1000);
-        
+        box.classList.add('pulse'); setTimeout(() => box.classList.remove('pulse'), 1000);
         text.innerText = currentTarget;
         
-        // Warna Target
         if(currentTarget === 'UNSUR') text.style.color = "#e67e22";
         if(currentTarget === 'SENYAWA') text.style.color = "#2980b9";
         if(currentTarget === 'CAMPURAN') text.style.color = "#27ae60";
-
         AudioEngine.playSwitch();
     }
 
     function update() {
         if (!isPlaying) return;
 
-        // Player Movement
-        if (leftPressed && player.x > 0) player.x -= player.speed;
-        if (rightPressed && player.x < canvas.width - player.width) player.x += player.speed;
-
-        // Difficulty
-        speedMultiplier = 1 + (score * 0.02); // Semakin tinggi skor, semakin cepat
+        // Difficulty (Naik pelan-pelan)
+        speedMultiplier = 1 + (score * 0.01); 
         
-        // Target Switching
         targetTimer++;
-        if (targetTimer > 600) { // Setiap ~10 detik (60fps)
-            switchTarget();
-            targetTimer = 0;
-        }
+        if (targetTimer > 600) { switchTarget(); targetTimer = 0; }
 
-        // Spawning
         spawnTimer++;
-        if (spawnTimer > 60) { // Spawn setiap detik (makin cepat nanti)
+        if (spawnTimer > 70) { // Spawn lebih jarang sedikit
             spawnItem();
-            spawnTimer = 0 - (score * 2); // Percepat spawn
+            spawnTimer = 0 - (score * 1.5); 
         }
 
         // Items Logic
@@ -303,21 +254,18 @@
             let item = items[i];
             item.y += item.speed;
 
-            // Collision Detection
+            // Collision
             if (
                 item.x < player.x + player.width &&
                 item.x + item.size > player.x &&
                 item.y < player.y + player.height &&
                 item.y + item.size > player.y
             ) {
-                // TANGKAP!
                 if (item.data.type === currentTarget) {
-                    // BENAR
                     score += 10;
                     createExplosion(item.x, item.y, '#2ecc71');
                     AudioEngine.playCorrect();
                 } else {
-                    // SALAH
                     lives--;
                     createExplosion(item.x, item.y, '#e74c3c');
                     AudioEngine.playWrong();
@@ -329,78 +277,53 @@
                 continue;
             }
 
-            // Missed (Lewat bawah)
-            if (item.y > canvas.height) {
-                items.splice(i, 1);
-            }
+            if (item.y > canvas.height) items.splice(i, 1);
         }
 
-        // Particles Logic
+        // Particles
         for (let i = particles.length - 1; i >= 0; i--) {
             let p = particles[i];
-            p.x += p.vx;
-            p.y += p.vy;
-            p.life -= 0.05;
+            p.x += p.vx; p.y += p.vy; p.life -= 0.05;
             if (p.life <= 0) particles.splice(i, 1);
         }
 
-        // Game Over Check
-        if (lives <= 0) {
-            endGame();
-        }
+        if (lives <= 0) endGame();
     }
 
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Draw Player (Basket)
+        // Player
         ctx.fillStyle = "#34495e";
         ctx.fillRect(player.x, player.y, player.width, player.height);
-        // Detail Basket
         ctx.fillStyle = "#f1c40f";
-        ctx.fillRect(player.x, player.y, player.width, 10); // Rim
-        ctx.font = "30px Arial";
-        ctx.textAlign = "center";
+        ctx.fillRect(player.x, player.y, player.width, 10);
+        ctx.font = "30px Arial"; ctx.textAlign = "center";
         ctx.fillText("🗑️", player.x + player.width/2, player.y + 40);
 
-        // Draw Items
+        // Items
         items.forEach(item => {
-            // Bubble Background
             ctx.beginPath();
             ctx.arc(item.x + item.size/2, item.y + item.size/2, item.size/2 + 5, 0, Math.PI*2);
-            ctx.fillStyle = "white";
-            ctx.fill();
-            ctx.lineWidth = 3;
-            ctx.strokeStyle = item.data.color;
-            ctx.stroke();
+            ctx.fillStyle = "white"; ctx.fill();
+            ctx.lineWidth = 3; ctx.strokeStyle = item.data.color; ctx.stroke();
 
-            // Text info
-            ctx.fillStyle = "black";
-            ctx.font = "bold 14px Arial";
+            ctx.fillStyle = "black"; ctx.font = "bold 14px Arial";
             ctx.fillText(item.data.name, item.x + item.size/2, item.y + item.size/2 - 5);
-            
-            // Formula (Smaller)
             if(item.data.formula) {
-                ctx.font = "italic 12px Arial";
-                ctx.fillStyle = "#555";
+                ctx.font = "italic 12px Arial"; ctx.fillStyle = "#555";
                 ctx.fillText(item.data.formula, item.x + item.size/2, item.y + item.size/2 + 15);
             }
         });
 
-        // Draw Particles
+        // Particles
         particles.forEach(p => {
-            ctx.globalAlpha = p.life;
-            ctx.fillStyle = p.color;
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, 5, 0, Math.PI*2);
-            ctx.fill();
+            ctx.globalAlpha = p.life; ctx.fillStyle = p.color;
+            ctx.beginPath(); ctx.arc(p.x, p.y, 5, 0, Math.PI*2); ctx.fill();
             ctx.globalAlpha = 1.0;
         });
 
-        requestAnimationFrame(() => {
-            update();
-            draw();
-        });
+        requestAnimationFrame(() => { update(); draw(); });
     }
 
     function updateUI() {
@@ -409,15 +332,11 @@
     }
 
     function startGame() {
-        score = 0;
-        lives = 3;
-        items = [];
-        particles = [];
-        speedMultiplier = 1;
-        currentTarget = "UNSUR";
+        score = 0; lives = 3; items = []; particles = []; speedMultiplier = 1; currentTarget = "UNSUR";
         document.getElementById('targetText').innerText = currentTarget;
         document.getElementById('startScreen').classList.add('hidden');
         document.getElementById('gameOverScreen').classList.add('hidden');
+        document.getElementById('dragHint').style.display = 'none';
         
         AudioEngine.ctx.resume();
         isPlaying = true;
@@ -436,7 +355,6 @@
         document.querySelector('.mute-btn').innerText = AudioEngine.muted ? "🔇" : "🔊";
     }
 
-    // Initial Draw
     draw();
 
 </script>
