@@ -3,28 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kimia Catcher: Glow Edition</title>
+    <title>Kimia Catcher: Level Edition</title>
     <style>
         body { margin: 0; overflow: hidden; background: #1e272e; font-family: 'Segoe UI', sans-serif; touch-action: none; }
         
-        #gameCanvas { display: block; width: 100%; height: 100vh; cursor: none; /* Sembunyikan kursor agar tidak menghalangi */ }
+        #gameCanvas { display: block; width: 100%; height: 100vh; cursor: none; }
         
         .ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; flex-direction: column; }
         
-        .header { padding: 20px; display: flex; justify-content: space-between; color: white; font-weight: bold; font-size: 1.5em; text-shadow: 0 0 10px rgba(255,255,255,0.5); z-index: 10; }
+        /* HEADER: Skor di Kiri, Musik di Kanan */
+        .header { padding: 20px; display: flex; justify-content: space-between; align-items: flex-start; color: white; font-weight: bold; font-size: 1.5em; text-shadow: 0 0 10px rgba(255,255,255,0.5); z-index: 10; }
         
-        .target-box { 
-            align-self: center; margin-top: 10px; padding: 15px 40px; 
-            background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px);
-            border-radius: 50px; border: 2px solid rgba(255,255,255,0.3);
-            text-align: center; box-shadow: 0 0 30px rgba(255,255,255,0.1);
-            transition: transform 0.3s;
-        }
-        .target-label { font-size: 0.9em; color: #ccc; letter-spacing: 2px; text-transform: uppercase; }
-        .target-text { font-size: 2.5em; font-weight: 900; color: white; margin: 5px 0 0 0; text-shadow: 0 0 20px currentColor; }
-        .pulse { animation: pulse 0.5s infinite alternate; }
-        @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.1); } }
-
         .modal { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
             background: rgba(0,0,0,0.9); 
@@ -33,20 +22,38 @@
         }
         .hidden { display: none !important; }
         
-        button { 
-            padding: 20px 50px; font-size: 1.5em; border: none; border-radius: 50px; 
-            background: linear-gradient(45deg, #00b894, #00cec9); color: white; cursor: pointer; font-weight: bold; 
-            box-shadow: 0 0 20px rgba(0, 184, 148, 0.5); margin-top: 30px; transition: 0.2s; 
+        /* TOMBOL LEVEL */
+        .level-container { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 20px; }
+        .lvl-btn {
+            padding: 15px 25px; font-size: 1.2em; border: none; border-radius: 10px;
+            color: white; cursor: pointer; font-weight: bold; transition: 0.2s;
+            box-shadow: 0 5px 0 rgba(0,0,0,0.3); width: 80px;
         }
-        button:active { transform: scale(0.95); }
+        .lvl-btn:active { transform: translateY(5px); box-shadow: none; }
         
+        /* Warna Level 1-5 (Hijau ke Merah) */
+        .l1 { background: #00b894; } /* Sangat Lambat */
+        .l2 { background: #0984e3; }
+        .l3 { background: #fdcb6e; color: #333; }
+        .l4 { background: #e17055; }
+        .l5 { background: #d63031; } /* Sangat Cepat */
+
+        .restart-btn { 
+            padding: 15px 40px; font-size: 1.5em; border: none; border-radius: 50px; 
+            background: #6c5ce7; color: white; cursor: pointer; font-weight: bold; margin-top: 20px; 
+        }
+
+        .mute-btn { 
+            pointer-events: auto; cursor: pointer; background: rgba(255,255,255,0.2); 
+            color: white; border-radius: 50%; width: 50px; height: 50px; 
+            border: none; font-size: 1.5em; display: flex; justify-content: center; align-items: center;
+        }
+
         .drag-hint {
-            position: absolute; bottom: 20%; width: 100%; text-align: center;
+            position: absolute; bottom: 10%; width: 100%; text-align: center;
             color: rgba(255,255,255,0.5); font-size: 1.2em; animation: fadeBlink 2s infinite;
         }
         @keyframes fadeBlink { 0%,100% {opacity: 0.3} 50% {opacity: 0.8} }
-        
-        .mute-btn { position: absolute; bottom: 20px; right: 20px; z-index: 30; background: rgba(255,255,255,0.2); color:white; border-radius: 50%; width:50px; height:50px; border: none; font-size: 1.5em; cursor: pointer; pointer-events: auto; display:flex; justify-content:center; align-items:center;}
 
     </style>
 </head>
@@ -56,53 +63,56 @@
 
     <div class="ui-layer">
         <div class="header">
-            <div>❤️ <span id="livesDisplay">3</span></div>
-            <div>✨ <span id="scoreDisplay">0</span></div>
+            <div style="text-align: left;">
+                <div style="margin-bottom: 5px;">❤️ <span id="livesDisplay">3</span></div>
+                <div>✨ <span id="scoreDisplay">0</span></div>
+            </div>
+            
+            <button class="mute-btn" onclick="toggleMute()">🔊</button>
         </div>
         
-        <div id="targetBox" class="target-box">
-            <div class="target-label">MISI SAAT INI</div>
-            <div id="targetText" class="target-text">UNSUR</div>
-        </div>
-
         <div id="dragHint" class="drag-hint">👋 Geser Mouse / Jari untuk Menangkap</div>
     </div>
 
     <div id="startScreen" class="modal">
         <div style="font-size: 4em; margin-bottom: 10px;">🧪</div>
         <h1 style="font-size: 3.5em; margin: 0; background: linear-gradient(to right, #00b894, #0984e3); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">KIMIA CATCHER</h1>
-        <p style="font-size: 1.2em; color: #dfe6e9;">Sortir Zat Jatuh dengan Cepat!</p>
-        <button onclick="startGame()">MULAI MAIN</button>
+        <p style="font-size: 1.2em; color: #dfe6e9; margin-bottom: 30px;">Pilih Tingkat Kecepatan:</p>
+        
+        <div class="level-container">
+            <button class="lvl-btn l1" onclick="startGame(1)">1<br><span style="font-size:0.6em">Santai</span></button>
+            <button class="lvl-btn l2" onclick="startGame(2)">2<br><span style="font-size:0.6em">Pelan</span></button>
+            <button class="lvl-btn l3" onclick="startGame(3)">3<br><span style="font-size:0.6em">Normal</span></button>
+            <button class="lvl-btn l4" onclick="startGame(4)">4<br><span style="font-size:0.6em">Cepat</span></button>
+            <button class="lvl-btn l5" onclick="startGame(5)">5<br><span style="font-size:0.6em">Kilat</span></button>
+        </div>
     </div>
 
     <div id="gameOverScreen" class="modal hidden">
         <h1 style="color: #ff7675;">GAME OVER</h1>
         <p>Skor Akhir:</p>
         <h2 style="font-size: 5em; margin: 10px 0; color: #fab1a0;" id="finalScore">0</h2>
-        <button onclick="startGame()">COBA LAGI 🔄</button>
+        <button class="restart-btn" onclick="location.reload()">PILIH LEVEL LAGI 🔄</button>
     </div>
-
-    <button class="mute-btn" onclick="toggleMute()">🔊</button>
 
 <script>
     // --- DATABASE ---
-    // Warna di sini adalah warna "Glow" neon-nya
     const substances = [
-        { name: "Emas", formula: "Au", type: "UNSUR", color: "#f1c40f" },     // Kuning Emas
-        { name: "Oksigen", formula: "O2", type: "UNSUR", color: "#00cec9" },   // Cyan
-        { name: "Besi", formula: "Fe", type: "UNSUR", color: "#b2bec3" },      // Silver
-        { name: "Karbon", formula: "C", type: "UNSUR", color: "#636e72" },     // Abu Gelap
-        { name: "Helium", formula: "He", type: "UNSUR", color: "#ff7675" },    // Pink Merah
-        { name: "Air", formula: "H2O", type: "SENYAWA", color: "#0984e3" },   // Biru Laut
-        { name: "Garam", formula: "NaCl", type: "SENYAWA", color: "#dfe6e9" }, // Putih
-        { name: "Gula", formula: "C12..", type: "SENYAWA", color: "#fdcb6e" }, // Kuning Pucat
-        { name: "CO2", formula: "Gas", type: "SENYAWA", color: "#a29bfe" },    // Ungu Pucat
-        { name: "Cuka", formula: "Asam", type: "SENYAWA", color: "#e17055" },  // Oranye
-        { name: "Udara", formula: "", type: "CAMPURAN", color: "#74b9ff" },    // Biru Langit
-        { name: "Sirup", formula: "", type: "CAMPURAN", color: "#d63031" },    // Merah Sirup
-        { name: "Perunggu", formula: "", type: "CAMPURAN", color: "#e84393" }, // Magenta
-        { name: "Tanah", formula: "", type: "CAMPURAN", color: "#8e44ad" },    // Ungu Tanah
-        { name: "Susu", formula: "", type: "CAMPURAN", color: "#fff" }         // Putih Susu
+        { name: "Emas", formula: "Au", type: "UNSUR", color: "#f1c40f" },
+        { name: "Oksigen", formula: "O2", type: "UNSUR", color: "#00cec9" },
+        { name: "Besi", formula: "Fe", type: "UNSUR", color: "#b2bec3" },
+        { name: "Karbon", formula: "C", type: "UNSUR", color: "#636e72" },
+        { name: "Helium", formula: "He", type: "UNSUR", color: "#ff7675" },
+        { name: "Air", formula: "H2O", type: "SENYAWA", color: "#0984e3" },
+        { name: "Garam", formula: "NaCl", type: "SENYAWA", color: "#dfe6e9" },
+        { name: "Gula", formula: "C12..", type: "SENYAWA", color: "#fdcb6e" },
+        { name: "CO2", formula: "Gas", type: "SENYAWA", color: "#a29bfe" },
+        { name: "Cuka", formula: "Asam", type: "SENYAWA", color: "#e17055" },
+        { name: "Udara", formula: "", type: "CAMPURAN", color: "#74b9ff" },
+        { name: "Sirup", formula: "", type: "CAMPURAN", color: "#d63031" },
+        { name: "Perunggu", formula: "", type: "CAMPURAN", color: "#e84393" },
+        { name: "Tanah", formula: "", type: "CAMPURAN", color: "#8e44ad" },
+        { name: "Susu", formula: "", type: "CAMPURAN", color: "#fff" }
     ];
 
     const targets = ["UNSUR", "SENYAWA", "CAMPURAN"];
@@ -116,10 +126,13 @@
     let isPlaying = false;
     let currentTarget = "UNSUR";
     let targetTimer = 0;
-    let speedMultiplier = 1;
     
-    // Player lebih besar
-    const player = { x: 0, y: 0, width: 120, height: 70 }; 
+    // Level & Speed
+    let currentLevel = 1;
+    let speedMultiplier = 1; // Akan diatur berdasarkan level
+    
+    // Player
+    const player = { x: 0, y: 0, width: 140, height: 80 }; 
     let items = [];
     let particles = [];
     let spawnTimer = 0;
@@ -160,7 +173,7 @@
     function resize() {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
-        player.y = canvas.height - 120; // Posisi keranjang agak naik
+        player.y = canvas.height - 130; 
         if(player.x > canvas.width - player.width) player.x = canvas.width - player.width;
     }
     window.addEventListener('resize', resize);
@@ -170,17 +183,23 @@
     // --- LOGIC ---
     function spawnItem() {
         const sub = substances[Math.floor(Math.random() * substances.length)];
-        // UKURAN LEBIH BESAR
         const size = 70; 
         const x = Math.random() * (canvas.width - size);
         
-        // KECEPATAN SANGAT PELAN (Start dari 0.8)
-        const baseSpeed = 0.8 + (Math.random() * 0.5); 
-        
+        // LOGIKA KECEPATAN BERDASARKAN LEVEL
+        // Level 1: 0.5 - 1.0 (Sangat Lambat)
+        // Level 5: 3.0 - 5.0 (Sangat Cepat)
+        let baseSpeed = 0.5;
+        if (currentLevel === 1) baseSpeed = 0.5 + Math.random() * 0.5;
+        else if (currentLevel === 2) baseSpeed = 1.0 + Math.random() * 0.8;
+        else if (currentLevel === 3) baseSpeed = 1.8 + Math.random() * 1.0;
+        else if (currentLevel === 4) baseSpeed = 2.5 + Math.random() * 1.5;
+        else if (currentLevel === 5) baseSpeed = 4.0 + Math.random() * 2.0;
+
         items.push({
             x: x, y: -80, size: size, data: sub,
-            speed: baseSpeed * speedMultiplier,
-            rot: Math.random() * Math.PI, // Rotasi random
+            speed: baseSpeed, 
+            rot: Math.random() * Math.PI,
             rotSpeed: (Math.random()-0.5) * 0.02
         });
     }
@@ -199,41 +218,30 @@
         const newTarget = targets[Math.floor(Math.random() * targets.length)];
         if (newTarget === currentTarget) { switchTarget(); return; }
         currentTarget = newTarget;
-        
-        const box = document.getElementById('targetBox');
-        const text = document.getElementById('targetText');
-        box.classList.add('pulse'); setTimeout(() => box.classList.remove('pulse'), 1000);
-        text.innerText = currentTarget;
-        
-        // Warna text sesuai target
-        if(currentTarget === 'UNSUR') text.style.color = "#ffeaa7";
-        if(currentTarget === 'SENYAWA') text.style.color = "#74b9ff";
-        if(currentTarget === 'CAMPURAN') text.style.color = "#55efc4";
         AudioEngine.playSwitch();
     }
 
     function update() {
         if (!isPlaying) return;
-
-        // Kenaikan kecepatan SANGAT PELAN
-        speedMultiplier = 1 + (score * 0.005); 
         
         targetTimer++;
-        if (targetTimer > 800) { switchTarget(); targetTimer = 0; } // Ganti target lebih lama
+        if (targetTimer > 900) { switchTarget(); targetTimer = 0; } 
 
         spawnTimer++;
-        if (spawnTimer > 90) { // Spawn lebih jarang
+        // Frekuensi spawn juga dipengaruhi level
+        // Level 1 spawn lambat (120 frame), Level 5 spawn cepat (40 frame)
+        let spawnRate = 120 - (currentLevel * 15); 
+        if (spawnTimer > spawnRate) { 
             spawnItem();
-            spawnTimer = 0 - (score * 0.5); 
+            spawnTimer = 0; 
         }
 
-        // Items
+        // Items Logic
         for (let i = items.length - 1; i >= 0; i--) {
             let item = items[i];
             item.y += item.speed;
             item.rot += item.rotSpeed;
 
-            // Hitbox agak dimaafkan (lebih kecil dari gambar visual)
             const hitX = item.x + 10;
             const hitW = item.size - 20;
 
@@ -251,7 +259,6 @@
                     lives--;
                     createExplosion(item.x + item.size/2, item.y + item.size/2, '#ff7675');
                     AudioEngine.playWrong();
-                    // Shake effect
                     canvas.style.transform = "translate(5px, 5px)";
                     setTimeout(() => canvas.style.transform = "none", 50);
                 }
@@ -276,26 +283,60 @@
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // -- DRAW PLAYER (KERANJANG FUTURISTIK) --
+        // -- DRAW PLAYER (KERANJANG) --
         ctx.save();
         ctx.shadowColor = "#0984e3"; ctx.shadowBlur = 20;
         ctx.fillStyle = "#dfe6e9";
-        // Bentuk keranjang trapesium
+        
         ctx.beginPath();
         ctx.moveTo(player.x, player.y);
         ctx.lineTo(player.x + player.width, player.y);
-        ctx.lineTo(player.x + player.width - 10, player.y + player.height);
-        ctx.lineTo(player.x + 10, player.y + player.height);
+        ctx.lineTo(player.x + player.width - 15, player.y + player.height);
+        ctx.lineTo(player.x + 15, player.y + player.height);
         ctx.closePath();
         ctx.fill();
         
-        // Garis neon
         ctx.strokeStyle = "#74b9ff"; ctx.lineWidth = 3; ctx.stroke();
         ctx.fillStyle = "#2d3436"; ctx.font = "30px Arial"; ctx.textAlign = "center";
-        ctx.fillText("📥", player.x + player.width/2, player.y + 45);
+        ctx.fillText("📥", player.x + player.width/2, player.y + 50);
+
+        // --- MISI YANG MENEMPEL (MOVING MISSION BADGE) ---
+        // Gambar kotak misi di atas keranjang
+        const badgeW = 160;
+        const badgeH = 40;
+        const badgeX = player.x + (player.width/2) - (badgeW/2);
+        const badgeY = player.y - 50; // Di atas keranjang
+
+        // Background Badge
+        ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+        ctx.beginPath();
+        ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 20);
+        ctx.fill();
+        
+        // Border Badge (Warnanya berubah sesuai target)
+        let borderColor = "#333";
+        if(currentTarget === 'UNSUR') borderColor = "#e67e22";
+        if(currentTarget === 'SENYAWA') borderColor = "#0984e3";
+        if(currentTarget === 'CAMPURAN') borderColor = "#00b894";
+        
+        ctx.strokeStyle = borderColor;
+        ctx.lineWidth = 4;
+        ctx.stroke();
+
+        // Teks Misi
+        ctx.fillStyle = borderColor;
+        ctx.font = "bold 16px Arial";
+        ctx.fillText("MISI: " + currentTarget, badgeX + badgeW/2, badgeY + 26);
+        
+        // Garis penghubung kecil ke keranjang (biar terlihat menempel)
+        ctx.beginPath();
+        ctx.moveTo(player.x + player.width/2, player.y);
+        ctx.lineTo(player.x + player.width/2, player.y - 10);
+        ctx.stroke();
+
         ctx.restore();
 
-        // -- DRAW ITEMS (3D BUBBLES) --
+        // -- DRAW ITEMS --
         items.forEach(item => {
             const cx = item.x + item.size/2;
             const cy = item.y + item.size/2;
@@ -305,52 +346,30 @@
             ctx.translate(cx, cy);
             ctx.rotate(item.rot);
 
-            // Efek Glow Luar
-            ctx.shadowColor = item.data.color;
-            ctx.shadowBlur = 15;
-
-            // Lingkaran Dasar
-            ctx.beginPath();
-            ctx.arc(0, 0, r, 0, Math.PI*2);
-            ctx.fillStyle = "rgba(30, 39, 46, 0.8)"; // Latar agak gelap
-            ctx.fill();
-
-            // Border Neon Tebal
-            ctx.lineWidth = 3;
-            ctx.strokeStyle = item.data.color;
-            ctx.stroke();
-
-            // Efek Kilap (Glossy) di atas
-            ctx.shadowBlur = 0; // Matikan shadow buat kilap
-            ctx.beginPath();
-            ctx.arc(-r*0.3, -r*0.3, r*0.2, 0, Math.PI*2);
-            ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
-            ctx.fill();
-
-            // TEKS (Lebih besar & Jelas)
-            ctx.shadowColor = "black"; ctx.shadowBlur = 4;
-            ctx.fillStyle = "white";
-            ctx.font = "bold 18px Arial"; 
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
+            ctx.shadowColor = item.data.color; ctx.shadowBlur = 15;
+            ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI*2);
+            ctx.fillStyle = "rgba(30, 39, 46, 0.8)"; ctx.fill();
+            ctx.lineWidth = 3; ctx.strokeStyle = item.data.color; ctx.stroke();
             
-            // Nama Zat
+            ctx.shadowBlur = 0;
+            ctx.beginPath(); ctx.arc(-r*0.3, -r*0.3, r*0.2, 0, Math.PI*2);
+            ctx.fillStyle = "rgba(255, 255, 255, 0.3)"; ctx.fill();
+
+            ctx.shadowColor = "black"; ctx.shadowBlur = 4;
+            ctx.fillStyle = "white"; ctx.font = "bold 18px Arial"; 
+            ctx.textAlign = "center"; ctx.textBaseline = "middle";
             ctx.fillText(item.data.name, 0, -5);
             
-            // Rumus Kimia (Kecil di bawahnya)
             if(item.data.formula) {
-                ctx.font = "14px Arial";
-                ctx.fillStyle = item.data.color; // Warna rumus mengikuti warna zat
+                ctx.font = "14px Arial"; ctx.fillStyle = item.data.color; 
                 ctx.fillText(item.data.formula, 0, 15);
             }
-
             ctx.restore();
         });
 
         // -- PARTICLES --
         particles.forEach(p => {
-            ctx.globalAlpha = p.life; 
-            ctx.fillStyle = p.color;
+            ctx.globalAlpha = p.life; ctx.fillStyle = p.color;
             ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
             ctx.globalAlpha = 1.0;
         });
@@ -363,9 +382,11 @@
         document.getElementById('livesDisplay').innerText = "❤️".repeat(lives);
     }
 
-    function startGame() {
-        score = 0; lives = 3; items = []; particles = []; speedMultiplier = 1; currentTarget = "UNSUR";
-        document.getElementById('targetText').innerText = currentTarget;
+    // UPDATE: StartGame menerima parameter level
+    function startGame(levelInput) {
+        currentLevel = levelInput || 1; // Default level 1
+        score = 0; lives = 3; items = []; particles = []; currentTarget = "UNSUR";
+        
         document.getElementById('startScreen').classList.add('hidden');
         document.getElementById('gameOverScreen').classList.add('hidden');
         document.getElementById('dragHint').style.display = 'none';
