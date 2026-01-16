@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kimia Duel: 5 Lab Lives</title>
+    <title>Kimia Duel: Balanced Edition</title>
     <style>
         body { margin: 0; overflow: hidden; background: #1e272e; font-family: 'Segoe UI', sans-serif; touch-action: none; }
         #gameCanvas { display: block; width: 100%; height: 100vh; }
@@ -19,7 +19,7 @@
 
         .modal { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.9); 
+            background: rgba(0,0,0,0.95); 
             display: flex; flex-direction: column; justify-content: center; align-items: center; 
             pointer-events: auto; z-index: 20; color: white; text-align: center;
         }
@@ -62,9 +62,9 @@
     </div>
 
     <div id="startScreen" class="modal">
-        <div style="font-size: 3em;">🧪🔋</div>
-        <h1 style="font-size: 3em; margin: 0; color: #f1c40f;">KIMIA DUEL: 5 LIVES</h1>
-        <p>Tangkap zat yang benar untuk ganti misi. Jangan pecahkan tabungmu!</p>
+        <div style="font-size: 3em;">🧪⚖️</div>
+        <h1 style="font-size: 3em; margin: 0; color: #f1c40f;">KIMIA DUEL: BALANCED</h1>
+        <p>Jumlah benda yang jatuh sudah dikurangi agar lebih fokus!</p>
         <div class="level-container">
             <button class="lvl-btn l1" onclick="startGame(1)">1</button>
             <button class="lvl-btn l2" onclick="startGame(2)">2</button>
@@ -89,7 +89,7 @@
         { name: "Oksigen", formula: "O2", type: "UNSUR", color: "#00cec9" },
         { name: "Besi", formula: "Fe", type: "UNSUR", color: "#b2bec3" },
         { name: "Karbon", formula: "C", type: "UNSUR", color: "#636e72" },
-        { name: "Helium", formula: "He", type: "UNSUR", color: "#ff7675" },
+        { name: "Nitrogen", formula: "N2", type: "UNSUR", color: "#55efc4" },
         { name: "Air", formula: "H2O", type: "SENYAWA", color: "#0984e3" },
         { name: "Garam", formula: "NaCl", type: "SENYAWA", color: "#dfe6e9" },
         { name: "Gula", formula: "C12..", type: "SENYAWA", color: "#fdcb6e" },
@@ -109,7 +109,6 @@
     let isPlaying = false;
     let currentLevel = 1;
 
-    // NYAWA DISET KE 5
     const p1 = { x: 0, y: 0, w: 140, h: 80, score: 0, lives: 5, target: "UNSUR", items: [], color: "#74b9ff", label: "P1" };
     const p2 = { x: 0, y: 0, w: 140, h: 80, score: 0, lives: 5, target: "SENYAWA", items: [], color: "#ff7675", label: "P2" };
 
@@ -152,7 +151,8 @@
     function spawnItem(player, sideMin, sideMax) {
         const sub = substances[Math.floor(Math.random() * substances.length)];
         const size = 70;
-        let baseSpeed = 0.5 + (currentLevel * 0.6) + (Math.random() * 0.5);
+        // Kecepatan disesuaikan agar tetap menantang tapi tidak berantakan
+        let baseSpeed = 0.5 + (currentLevel * 0.5) + (Math.random() * 0.4);
         player.items.push({ x: sideMin + Math.random() * (sideMax - sideMin - size), y: -100, size, data: sub, speed: baseSpeed });
     }
 
@@ -173,7 +173,8 @@
         [p1, p2].forEach((p, idx) => {
             if (p.lives <= 0) return;
             
-            if (Math.random() < 0.01 + (currentLevel * 0.005)) {
+            // SPAWN RATE DIKURANGI (Probabilitas diturunkan dari 0.01 ke 0.006)
+            if (Math.random() < 0.006 + (currentLevel * 0.003)) {
                 let min = idx === 0 ? 0 : canvas.width/2;
                 let max = idx === 0 ? canvas.width/2 : canvas.width;
                 spawnItem(p, min, max);
@@ -192,7 +193,6 @@
                     }
                     p.items.splice(i, 1);
                     document.getElementById(`scoreP${idx+1}`).innerText = p.score;
-                    // UPDATE VISUAL TABUNG REAKSI
                     document.getElementById(`livesP${idx+1}`).innerText = "🧪".repeat(p.lives);
                     continue;
                 }
@@ -210,7 +210,7 @@
             if (p.lives <= 0) {
                 ctx.fillStyle = "rgba(0,0,0,0.4)";
                 ctx.fillRect(p === p1 ? 0 : canvas.width/2, 0, canvas.width/2, canvas.height);
-                ctx.fillStyle = "white"; ctx.font = "bold 30px Arial";
+                ctx.fillStyle = "white"; ctx.textAlign = "center"; ctx.font = "bold 30px Arial";
                 ctx.fillText("OUT", p.x + p.w/2, p.y);
                 return;
             }
@@ -235,7 +235,8 @@
                 ctx.beginPath(); ctx.arc(it.x + it.size/2, it.y + it.size/2, it.size/2, 0, Math.PI*2);
                 ctx.fillStyle = "white"; ctx.fill();
                 ctx.strokeStyle = it.data.color; ctx.lineWidth = 3; ctx.stroke();
-                ctx.fillStyle = "black"; ctx.font = "bold 14px Arial";
+                
+                ctx.fillStyle = "black"; ctx.font = "bold 15px Arial";
                 ctx.fillText(it.data.name, it.x + it.size/2, it.y + it.size/2);
                 ctx.restore();
             });
