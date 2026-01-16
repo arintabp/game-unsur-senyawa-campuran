@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kimia Catcher: DUEL EDITION</title>
+    <title>Kimia Duel: Catch & Switch</title>
     <style>
         body { margin: 0; overflow: hidden; background: #1e272e; font-family: 'Segoe UI', sans-serif; touch-action: none; }
         #gameCanvas { display: block; width: 100%; height: 100vh; }
         
         .ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
         
-        /* Skor & Nyawa di atas masing-masing layar */
         .stats { position: absolute; top: 20px; width: 40%; display: flex; justify-content: space-between; color: white; font-weight: bold; font-size: 1.2em; text-shadow: 0 0 10px rgba(0,0,0,0.5); }
         #statsP1 { left: 5%; color: #74b9ff; }
         #statsP2 { right: 5%; color: #ff7675; }
@@ -60,10 +59,9 @@
     </div>
 
     <div id="startScreen" class="modal">
-        <div style="font-size: 3em;">⚔️</div>
-        <h1 style="font-size: 3em; margin: 0; color: #f1c40f;">KIMIA DUEL</h1>
-        <p>Tangkap zat sesuai misi di sisi layar masing-masing!</p>
-        <p style="font-size: 0.8em; color: #bdc3c7;">P1 (Kiri): Tombol A & D | P2 (Kanan): Tombol ⬅️ & ➡️</p>
+        <div style="font-size: 3em;">🧪🧪</div>
+        <h1 style="font-size: 3em; margin: 0; color: #f1c40f;">KIMIA DUEL v2</h1>
+        <p>Target misi akan berganti SETIAP KALI kamu berhasil menangkap!</p>
         <div class="level-container">
             <button class="lvl-btn l1" onclick="startGame(1)">1</button>
             <button class="lvl-btn l2" onclick="startGame(2)">2</button>
@@ -108,29 +106,27 @@
     let isPlaying = false;
     let currentLevel = 1;
 
-    // --- PLAYER OBJECTS ---
-    const p1 = { x: 0, y: 0, w: 90, h: 70, score: 0, lives: 3, target: "UNSUR", items: [], color: "#74b9ff", label: "P1", timer: 0 };
-    const p2 = { x: 0, y: 0, w: 90, h: 70, score: 0, lives: 3, target: "SENYAWA", items: [], color: "#ff7675", label: "P2", timer: 0 };
-    let particles = [];
+    const p1 = { x: 0, y: 0, w: 140, h: 80, score: 0, lives: 3, target: "UNSUR", items: [], color: "#74b9ff", label: "P1" };
+    const p2 = { x: 0, y: 0, w: 140, h: 80, score: 0, lives: 3, target: "SENYAWA", items: [], color: "#ff7675", label: "P2" };
 
     const AudioEngine = {
         ctx: new (window.AudioContext || window.webkitAudioContext)(),
         muted: false,
         playTone: function(f, t, d) { if(this.muted) return; const o = this.ctx.createOscillator(); const g = this.ctx.createGain(); o.type = t; o.frequency.value = f; g.gain.setValueAtTime(0.1, this.ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime+d); o.connect(g); g.connect(this.ctx.destination); o.start(); o.stop(this.ctx.currentTime+d); },
         playCorrect: function() { this.playTone(800, 'sine', 0.2); },
-        playWrong: function() { this.playTone(150, 'sawtooth', 0.3); }
+        playWrong: function() { this.playTone(150, 'sawtooth', 0.3); },
+        playSwitch: function() { this.playTone(400, 'square', 0.1); setTimeout(()=>this.playTone(600, 'square', 0.1), 100); }
     };
 
     function resize() {
         canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-        p1.y = p2.y = canvas.height - 90;
+        p1.y = p2.y = canvas.height - 130;
         p1.x = (canvas.width / 4) - (p1.w / 2);
         p2.x = (canvas.width * 3/4) - (p2.w / 2);
     }
     window.addEventListener('resize', resize);
     resize();
 
-    // --- CONTROLS ---
     const keys = {};
     window.addEventListener('keydown', e => keys[e.code] = true);
     window.addEventListener('keyup', e => keys[e.code] = false);
@@ -152,32 +148,30 @@
 
     function spawnItem(player, sideMin, sideMax) {
         const sub = substances[Math.floor(Math.random() * substances.length)];
-        const size = 65;
-        let baseSpeed = 0.5 + (currentLevel * 0.7) + (Math.random() * 0.5);
-        player.items.push({ x: sideMin + Math.random() * (sideMax - sideMin - size), y: -80, size, data: sub, speed: baseSpeed });
+        const size = 70;
+        let baseSpeed = 0.5 + (currentLevel * 0.6) + (Math.random() * 0.5);
+        player.items.push({ x: sideMin + Math.random() * (sideMax - sideMin - size), y: -100, size, data: sub, speed: baseSpeed });
     }
 
+    // Fungsi ganti misi (Hanya dipanggil saat berhasil menangkap)
     function switchTarget(player) {
         const others = targets.filter(t => t !== player.target);
         player.target = others[Math.floor(Math.random() * others.length)];
+        AudioEngine.playSwitch();
     }
 
     function update() {
         if (!isPlaying) return;
 
-        // Keyboard Controls
-        if (keys['KeyA'] && p1.x > 0) p1.x -= 8;
-        if (keys['KeyD'] && p1.x < canvas.width/2 - p1.w) p1.x += 8;
-        if (keys['ArrowLeft'] && p2.x > canvas.width/2) p2.x -= 8;
-        if (keys['ArrowRight'] && p2.x < canvas.width - p2.w) p2.x += 8;
+        if (keys['KeyA'] && p1.x > 0) p1.x -= 10;
+        if (keys['KeyD'] && p1.x < canvas.width/2 - p1.w) p1.x += 10;
+        if (keys['ArrowLeft'] && p2.x > canvas.width/2) p2.x -= 10;
+        if (keys['ArrowRight'] && p2.x < canvas.width - p2.w) p2.x += 10;
 
         [p1, p2].forEach((p, idx) => {
             if (p.lives <= 0) return;
             
-            p.timer++;
-            if (p.timer > 800) { switchTarget(p); p.timer = 0; }
-
-            // Spawn rate per level
+            // Spawn Rate
             if (Math.random() < 0.01 + (currentLevel * 0.005)) {
                 let min = idx === 0 ? 0 : canvas.width/2;
                 let max = idx === 0 ? canvas.width/2 : canvas.width;
@@ -190,9 +184,15 @@
 
                 if (it.x < p.x + p.w && it.x + it.size > p.x && it.y < p.y + p.h && it.y + it.size > p.y) {
                     if (it.data.type === p.target) {
-                        p.score += 10; AudioEngine.playCorrect();
+                        // JAWABAN BENAR
+                        p.score += 10; 
+                        AudioEngine.playCorrect();
+                        switchTarget(p); // MISI BERGANTI SETELAH BERHASIL
                     } else {
-                        p.lives--; AudioEngine.playWrong();
+                        // JAWABAN SALAH
+                        p.lives--; 
+                        AudioEngine.playWrong();
+                        // Misi TIDAK berganti agar pemain tetap harus mencari zat yang diminta
                     }
                     p.items.splice(i, 1);
                     document.getElementById(`scoreP${idx+1}`).innerText = p.score;
@@ -210,30 +210,40 @@
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         [p1, p2].forEach(p => {
-            // Draw Basket
+            // Keranjang
             ctx.fillStyle = p.color;
-            ctx.beginPath();
-            ctx.roundRect(p.x, p.y, p.w, p.h, 15);
-            ctx.fill();
+            ctx.beginPath(); ctx.roundRect(p.x, p.y, p.w, p.h, 15); ctx.fill();
             ctx.fillStyle = "white"; ctx.textAlign = "center"; ctx.font = "bold 20px Arial";
-            ctx.fillText("📥 " + p.label, p.x + p.w/2, p.y + 45);
+            ctx.fillText("📥 " + p.label, p.x + p.w/2, p.y + 50);
 
-            // Mission Badge (Melayang di atas keranjang)
-            const badgeW = 140; const badgeY = p.y - 50;
-            ctx.fillStyle = "rgba(255,255,255,0.9)";
-            ctx.beginPath(); ctx.roundRect(p.x + (p.w/2 - badgeW/2), badgeY, badgeW, 35, 10); ctx.fill();
-            ctx.fillStyle = "#333"; ctx.font = "bold 14px Arial";
-            ctx.fillText("MISI: " + p.target, p.x + p.w/2, badgeY + 22);
+            // Misi Melayang (Ikut bergerak dengan keranjang)
+            const badgeW = 150; const badgeY = p.y - 60;
+            ctx.fillStyle = "rgba(255,255,255,0.95)";
+            ctx.beginPath(); ctx.roundRect(p.x + (p.w/2 - badgeW/2), badgeY, badgeW, 40, 20); ctx.fill();
+            
+            let accentColor = "#333";
+            if(p.target === 'UNSUR') accentColor = "#e67e22";
+            if(p.target === 'SENYAWA') accentColor = "#0984e3";
+            if(p.target === 'CAMPURAN') accentColor = "#00b894";
 
-            // Draw Items
+            ctx.strokeStyle = accentColor; ctx.lineWidth = 3; ctx.stroke();
+            ctx.fillStyle = accentColor; ctx.font = "bold 15px Arial";
+            ctx.fillText("MISI: " + p.target, p.x + p.w/2, badgeY + 25);
+
+            // Item Jatuh
             p.items.forEach(it => {
                 ctx.save();
-                ctx.shadowBlur = 10; ctx.shadowColor = it.data.color;
+                ctx.shadowBlur = 15; ctx.shadowColor = it.data.color;
                 ctx.beginPath(); ctx.arc(it.x + it.size/2, it.y + it.size/2, it.size/2, 0, Math.PI*2);
                 ctx.fillStyle = "white"; ctx.fill();
                 ctx.strokeStyle = it.data.color; ctx.lineWidth = 3; ctx.stroke();
+                
                 ctx.fillStyle = "black"; ctx.font = "bold 14px Arial";
-                ctx.fillText(it.data.name, it.x + it.size/2, it.y + it.size/2 + 5);
+                ctx.fillText(it.data.name, it.x + it.size/2, it.y + it.size/2);
+                if(it.data.formula) {
+                    ctx.font = "12px Arial"; ctx.fillStyle = "#666";
+                    ctx.fillText(it.data.formula, it.x + it.size/2, it.y + it.size/2 + 18);
+                }
                 ctx.restore();
             });
         });
@@ -254,7 +264,7 @@
         document.getElementById('gameOverScreen').classList.remove('hidden');
         document.getElementById('finalScoreP1').innerText = p1.score;
         document.getElementById('finalScoreP2').innerText = p2.score;
-        let winMsg = p1.score > p2.score ? "PEMAIN 1 MENANG! 🏆" : (p2.score > p1.score ? "PEMAIN 2 MENANG! 🏆" : "SERI! 🤝");
+        let winMsg = p1.score > p2.score ? "P1 MENANG! 🏆" : (p2.score > p1.score ? "P2 MENANG! 🏆" : "SERI! 🤝");
         document.getElementById('winnerTitle').innerText = winMsg;
     }
 
