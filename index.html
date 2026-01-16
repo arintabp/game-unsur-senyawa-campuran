@@ -109,8 +109,8 @@
     let currentLevel = 1;
 
     // --- PLAYER OBJECTS ---
-    const p1 = { x: 0, y: 0, w: 120, h: 70, score: 0, lives: 3, target: "UNSUR", items: [], color: "#74b9ff", label: "P1", timer: 0 };
-    const p2 = { x: 0, y: 0, w: 120, h: 70, score: 0, lives: 3, target: "SENYAWA", items: [], color: "#ff7675", label: "P2", timer: 0 };
+    const p1 = { x: 0, y: 0, w: 90, h: 70, score: 0, lives: 3, target: "UNSUR", items: [], color: "#74b9ff", label: "P1", timer: 0 };
+    const p2 = { x: 0, y: 0, w: 90, h: 70, score: 0, lives: 3, target: "SENYAWA", items: [], color: "#ff7675", label: "P2", timer: 0 };
     let particles = [];
 
     const AudioEngine = {
@@ -123,7 +123,7 @@
 
     function resize() {
         canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-        p1.y = p2.y = canvas.height - 120;
+        p1.y = p2.y = canvas.height - 90;
         p1.x = (canvas.width / 4) - (p1.w / 2);
         p2.x = (canvas.width * 3/4) - (p2.w / 2);
     }
